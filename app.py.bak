@@ -1,0 +1,429 @@
+import streamlit as st
+import pandas as pd
+import pdfplumber
+import sqlite3
+import re
+from thefuzz import process, fuzz
+import os
+from openai import AzureOpenAI
+import json
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
+
+# Configuration
+DB_PATH = 'data/prices.db'
+
+def get_connection():
+    return sqlite3.connect(DB_PATH)
+
+def load_price_list():
+    """Load the entire price list into memory for fuzzy matching"""
+    conn = get_connection()
+    df = pd.read_sql("SELECT * FROM prices", conn)
+    conn.close()
+    return df
+
+SYSTEM_PROMPT = """
+Du bist ein intelligenter Assistent für die Analyse von Leistungsverzeichnissen (LVs) im Baugewerbe.
+Deine Aufgabe ist es, den Text eines LV zu analysieren und die einzelnen Positionen (Items) zu extrahieren.
+Jede Position sollte die folgenden Informationen enthalten:
+- `oz`: Die Ordnungszahl (z.B. "01.01.00.10").
+- `description`: Der vollständige Beschreibungstext der Position.
+- `quantity`: Die Menge. Extrahiere die Zahl EXAKT so wie sie dasteht. Interpretiere sie nicht.
+- `unit`: Die Einheit (z.B. "m2", "Stk", "psch"). Extrahiere die Einheit EXAKT so wie sie dasteht. Interpretiere sie nicht.
+
+Analysiere den gesamten Text und gib eine JSON-Struktur zurück, die eine Liste aller gefundenen Positionen unter dem Schlüssel "items" enthält.
+Stelle sicher, dass die Ausgabe ein valides JSON-Objekt ist.
+Beispiel für eine Position:
+{
+  "oz": "03.03.04.01.",
+  "description": "Bodenplatte aus Stahlbeton C25/30, Dicke 25 cm, bewehrt.",
+  "quantity": 350.5,
+  "unit": "m2"
+}
+"""
+
+def analyze_with_azure_ai(pdf_text, system_instructions):
+    """
+    Analyzes the PDF text using Azure OpenAI to extract items and match them to the price list.
+    """
+    try:
+        client = AzureOpenAI(
+            azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
+            api_key=os.getenv("AZURE_OPENAI_API_KEY"),
+            api_version=os.getenv("AZURE_OPENAI_API_VERSION")
+        )
+
+        user_prompt = f"""
+        Hier ist der Text aus dem Leistungsverzeichnis (LV) PDF:
+        --- LV TEXT START ---
+        {pdf_text}
+        --- LV TEXT ENDE ---
+        Bitte analysiere den LV Text und extrahiere alle Positionen.
+        """
+
+        response = client.chat.completions.create(
+            model=os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME", "gpt-4"),
+            response_format={"type": "json_object"},
+            messages=[
+                {"role": "system", "content": system_instructions},
+                {"role": "user", "content": user_prompt}
+            ],
+            temperature=0,
+            seed=42
+        )
+
+        response_content = response.choices[0].message.content
+        parsed_json = json.loads(response_content)
+        return parsed_json.get("items", [])
+
+    except Exception as e:
+        st.error(f"Fehler bei der Kommunikation mit Azure AI: {e}")
+        return None
+
+
+def extract_lv_items(pdf_file):
+    """
+    Extracts LV items (Positions) from the uploaded PDF.
+    Returns a list of dicts: {'oz': '01.01.00.10', 'qty': 100, 'unit': 'm2', 'text': 'Beton...'}
+    """
+    items = []
+
+    with pdfplumber.open(pdf_file) as pdf:
+        full_text = ""
+        for page in pdf.pages:
+            full_text += page.extract_text() + "
+"
+
+    lines = full_text.split('
+')
+
+    current_item = None
+
+    # Updated Regex for "03.03.04.01." style OZ (sometimes 2 digits, sometimes mixed)
+    # Looks for at least 3 groups of digits separated by dots, starting at line start
+    oz_pattern = r'^(\d{2,}\.\d{2,}\.\d{2,}(?:\.\d{2,})?\.?)\s+(.*)'
+
+    # Regex for Quantity line: "3.900,000m2 ............" or "1.500,000 m"
+    # Matches: Number + Whitespace(optional) + Unit + dots or end of line
+    qty_line_pattern = r'^\s*([\d\.,]+)\s*([a-zA-Z²³]+|m2|m3|Stk|psch|lfm|h|t)\s*(\.{2,}|Nur Einh\.|Einh\.-Pr\.)?'
+
+    for line in lines:
+        line = line.strip()
+        if not line:
+            continue
+
+        # Check for new position start (OZ)
+        match_oz = re.match(oz_pattern, line)
+        if match_oz:
+            # If we were building an item but didn't find a quantity yet,
+            # we might have missed it or it's a header.
+            # For now, let's just save valid items.
+            if current_item and current_item['qty'] > 0:
+                items.append(current_item)
+                current_item = None
+            elif current_item:
+                # We had an item but no quantity found before the next OZ started.
+                # It's likely a Title/Header line (e.g. "03.03.04. Bodenplatte")
+                # We can ignore it as a billable item.
+                current_item = None
+
+            oz = match_oz.group(1)
+            desc_start = match_oz.group(2)
+
+            current_item = {
+                'oz': oz,
+                'text': desc_start,
+                'qty': 0.0,
+                'unit': '',
+                'matched_price': 0.0,
+                'matched_desc': '',
+                'match_score': 0
+            }
+            continue
+
+        # If we are inside an item, check for Quantity line
+        if current_item:
+            match_qty = re.search(qty_line_pattern, line)
+            # Ensure it's not just a year "2024" or a page number "24 von 28"
+            if match_qty and "von" not in line and "Datum" not in line:
+                qty_str = match_qty.group(1).replace('.', '').replace(',', '.')
+                unit = match_qty.group(2)
+
+                try:
+                    qty = float(qty_str)
+                    current_item['qty'] = qty
+                    current_item['unit'] = unit
+
+                    # Found quantity -> Item complete. Save and reset.
+                    items.append(current_item)
+                    current_item = None
+                except:
+                    pass # Parse error, continue looking
+            else:
+                # Accumulate description text
+                # Filter out page footer junk
+                if "Datum:" not in line and "Projekt:" not in line and "Leistungsverzeichnis" not in line:
+                    current_item['text'] += " " + line
+
+    # Add last item if valid
+    if current_item and current_item['qty'] > 0:
+        items.append(current_item)
+
+    return items
+
+def find_best_match(item_text, price_db):
+    """Find the best matching price from the DB using Learning + Fuzzy logic"""
+    if price_db.empty:
+        return None
+
+    # Ensure dataframe is sorted for consistent tie-breaking
+    price_db = price_db.sort_values(by='description').reset_index(drop=True)
+
+    # 1. LEARNING CHECK: Did we match this exact text before?
+    # Simple normalization to avoid issues with extra spaces
+    normalized_text = item_text.strip()
+
+    conn = get_connection()
+    # Check learning table
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT m.mapped_price_id, p.description, p.price_min, p.unit
+        FROM learning_mappings m
+        JOIN prices p ON m.mapped_price_id = p.id
+        WHERE m.lv_text_raw = ?
+        ORDER BY m.confirmed_count DESC LIMIT 1
+    """, (normalized_text,))
+    learned_match = cursor.fetchone()
+    conn.close()
+
+    if learned_match:
+        # We found a learned match! Use it with 100% confidence.
+        return {
+            'price': learned_match[2],
+            'description': learned_match[1] + " (Gelernt)",
+            'unit': learned_match[3],
+            'score': 100,
+            'price_id': learned_match[0] # Keep ID for later
+        }
+
+    # 2. FUZZY FALLBACK: If nothing learned, guess.
+    choices = price_db['description'].tolist()
+    # Use partial_token_sort_ratio for better handling of long LV texts vs short price list items
+    best_match = process.extractOne(item_text, choices, scorer=fuzz.partial_token_sort_ratio)
+
+    if best_match:
+        match_text, score = best_match
+        
+        # --- PRECISION IMPROVEMENT ---
+        if score < 60:
+            return {
+                'price': 0.0,
+                'description': "No Match",
+                'unit': '',
+                'score': score,
+                'price_id': -1
+            }
+
+        # Find the row in the DB that matches this description
+        row = price_db[price_db['description'] == match_text].iloc[0]
+        return {
+            'price': row['price_min'],
+            'description': row['description'],
+            'unit': row['unit'],
+            'score': score,
+            'price_id': int(row['id']) # Store ID
+        }
+    return None
+def save_offer_to_history(pdf_name, total, count, items_data):
+    """Save the offer to history and Update Learning Database"""
+    conn = get_connection()
+    c = conn.cursor()
+
+    # 1. Save Header
+    c.execute("INSERT INTO offers (project_name, total_amount, item_count, pdf_name) VALUES (?, ?, ?, ?)",
+              (pdf_name, total, count, pdf_name))
+
+    # 2. Learn from the User's final choices
+    # items_data contains the FINAL state of the table (what the user edited/approved)
+    for index, row in items_data.iterrows():
+        lv_text = row['Beschreibung (LV)'] # This comes from the LV (truncated in display, careful!)
+        # We need the full text ideally, but let's assume for now the user didn't change the LV text,
+        # but they DID accept/change the "Zugeordneter Artikel".
+
+        # If we had a price_id (meaning it was mapped to something in our DB)
+        # We should reinforce this link.
+        # Note: In a real app, we need to track the 'price_id' hidden in the dataframe.
+        pass # Placeholder for complex learning logic (needs hidden ID column)
+
+    conn.commit()
+    conn.close()
+
+# --- Main App UI ---
+# --- Main App UI ---
+
+st.set_page_config(page_title="AS Betontechnik - Offer Generator", layout="wide")
+
+st.title("🏗️ AS Betontechnik - Intelligente Angebotserstellung")
+
+# --- Sidebar ---
+st.sidebar.header("Navigation")
+app_mode = st.sidebar.radio(
+    "Wählen Sie eine Ansicht",
+    ["Angebot erstellen", "Datenbank verwalten"],
+    key="navigation_radio"
+)
+
+st.sidebar.header("Historie")
+conn = get_connection()
+history = pd.read_sql("SELECT id, created_at, project_name, total_amount FROM offers ORDER BY created_at DESC LIMIT 10", conn)
+conn.close()
+
+if not history.empty:
+    for index, row in history.iterrows():
+        st.sidebar.markdown(f"**{row['project_name']}**")
+        st.sidebar.caption(f"{row['created_at'].split(' ')[0]} | {row['total_amount']:,.2f} €")
+        st.sidebar.divider()
+else:
+    st.sidebar.info("Noch keine Angebote erstellt.")
+
+st.sidebar.header("Status")
+price_db = None
+if not os.path.exists(DB_PATH):
+    st.sidebar.error("Datenbank nicht gefunden!")
+    st.sidebar.info("Bitte zuerst 'ingest_prices.py' ausführen.")
+else:
+    price_db = load_price_list()
+    st.sidebar.success(f"Datenbank geladen: {len(price_db)} Artikel")
+
+# --- Main Area ---
+
+if app_mode == "Datenbank verwalten":
+    st.header("Datenbank-Editor")
+    if price_db is not None:
+        st.info("Hier können Sie die Preisdatenbank direkt bearbeiten. Änderungen werden nach dem Speichern sofort wirksam.")
+        
+        # Use st.data_editor to display and edit the data
+        edited_df = st.data_editor(
+            price_db,
+            num_rows="dynamic",  # Allow adding and deleting rows
+            use_container_width=True,
+            column_config={
+                "id": st.column_config.NumberColumn("ID", disabled=True),
+                "description": st.column_config.TextColumn("Beschreibung", width="large"),
+                "unit": st.column_config.TextColumn("Einheit"),
+                "price_min": st.column_config.NumberColumn("Preis Min (€)", format="%.2f"),
+                "price_max": st.column_config.NumberColumn("Preis Max (€)", format="%.2f"),
+                "category": st.column_config.TextColumn("Kategorie"),
+            }
+        )
+
+        if st.button("Änderungen speichern", type="primary"):
+            try:
+                conn = get_connection()
+                # Use a temporary table for safer writes
+                edited_df.to_sql('prices_temp', conn, if_exists='replace', index=False)
+                # Here you could add validation before replacing the main table
+                # For simplicity, we just replace it
+                edited_df.to_sql('prices', conn, if_exists='replace', index=False)
+                conn.commit()
+                conn.close()
+                st.success("Datenbank erfolgreich aktualisiert!")
+                st.rerun() # Rerun to show the updated data from DB
+            except Exception as e:
+                st.error(f"Fehler beim Speichern der Datenbank: {e}")
+    else:
+        st.error("Datenbank konnte nicht geladen werden.")
+
+elif app_mode == "Angebot erstellen":
+    uploaded_file = st.file_uploader("Leistungsverzeichnis (PDF) hochladen", type="pdf")
+
+    if uploaded_file and price_db is not None:
+        st.info(f"PDF '{uploaded_file.name}' wird analysiert...")
+
+        use_ai = st.sidebar.checkbox("🧠 Azure AI nutzen", value=True)
+        
+        extracted_items = []
+        try:
+            with pdfplumber.open(uploaded_file) as pdf:
+                full_text = "".join(page.extract_text() for page in pdf.pages)
+
+            if use_ai:
+                st.info("Extraktion mit Azure AI...")
+                # Show prompt editor in sidebar for advanced users
+                system_instructions = st.sidebar.text_area("System Prompt (nur für AI)", SYSTEM_PROMPT, height=250)
+                extracted_items = analyze_with_azure_ai(full_text, system_instructions)
+            else:
+                st.info("Extraktion mit Regex-Regeln...")
+                # Re-opening the file object for the regex function
+                uploaded_file.seek(0)
+                extracted_items = extract_lv_items(uploaded_file)
+            
+            if not extracted_items:
+                st.warning("Keine Positionen im PDF gefunden. Versuchen Sie die andere Extraktionsmethode oder prüfen Sie das PDF.")
+            else:
+                st.success(f"{len(extracted_items)} Positionen extrahiert.")
+
+                results = []
+                progress_bar = st.progress(0, text="Gleiche Artikel mit Datenbank ab...")
+                for i, item in enumerate(extracted_items):
+                    item_desc = item.get('text') or item.get('description', '')
+                    match_result = find_best_match(item_desc, price_db)
+                    
+                    if match_result:
+                        results.append({
+                            'OZ': item['oz'],
+                            'Beschreibung (LV)': item_desc,
+                            'Menge': item.get('qty') or item.get('quantity'),
+                            'Einheit (LV)': item.get('unit'),
+                            'Zugeordneter Artikel': match_result['description'],
+                            'Match (%)': match_result['score'],
+                            'Einheit (DB)': match_result['unit'],
+                            'Preis (€)': match_result['price'],
+                        })
+                    else:
+                         results.append({
+                            'OZ': item['oz'],
+                            'Beschreibung (LV)': item_desc,
+                            'Menge': item.get('qty') or item.get('quantity'),
+                            'Einheit (LV)': item.get('unit'),
+                            'Zugeordneter Artikel': "--- KEIN TREFFER ---",
+                            'Match (%)': 0,
+                            'Einheit (DB)': '',
+                            'Preis (€)': 0.0,
+                        })
+                    progress_bar.progress((i + 1) / len(extracted_items), text=f"Verarbeite Position {i+1}/{len(extracted_items)}")
+                
+                progress_bar.empty()
+                
+                results_df = pd.DataFrame(results)
+                st.header("Vorschlag für Angebot")
+                st.info("Überprüfen und bearbeiten Sie die zuegordneten Artikel und Preise. Änderungen werden automatisch gespeichert.")
+
+                # Calculate total amount
+                results_df['Gesamt (€)'] = results_df['Menge'] * results_df['Preis (€)']
+                
+                edited_results_df = st.data_editor(
+                    results_df,
+                    use_container_width=True,
+                    column_config={
+                        "Beschreibung (LV)": st.column_config.TextColumn(width="large"),
+                        "Zugeordneter Artikel": st.column_config.TextColumn(width="large"),
+                        "Match (%)": st.column_config.ProgressColumn(format="%d%%", min_value=0, max_value=100),
+                        "Preis (€)": st.column_config.NumberColumn(format="%.2f"),
+                        "Gesamt (€)": st.column_config.NumberColumn(format="%.2f", disabled=True),
+                    }
+                )
+                
+                # Show total
+                total_sum = edited_results_df['Gesamt (€)'].sum()
+                st.metric("Gesamtsumme Angebot", f"{total_sum:,.2f} €")
+
+                if st.button("Angebot in Historie speichern", type="primary"):
+                    save_offer_to_history(uploaded_file.name, total_sum, len(edited_results_df), edited_results_df)
+                    st.success("Angebot wurde erfolgreich gespeichert!")
+        
+        except Exception as e:
+            st.error(f"Ein Fehler ist aufgetreten: {e}")

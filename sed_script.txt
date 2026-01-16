@@ -1,0 +1,20 @@
+s/def analyze_with_azure_ai(pdf_text, price_db, system_instructions):/def analyze_with_azure_ai(pdf_text, system_instructions):/
+/price_list_str =/d
+/Hier ist die Preisdatenbank:/,/--- PREISDATENBANK ENDE ---/d
+s/ai_items = analyze_with_azure_ai(full_text, price_db, system_prompt)/ai_items = analyze_with_azure_ai(full_text, system_prompt)/
+/price_id'/: /item.get('mapped_price_id')/d
+/# If AI already found a price ID/,/else:/d
+/default_system_prompt = """/,/- `mapped_price_id`.*"""/c\
+            default_system_prompt = """\
+Du bist ein intelligenter Assistent für die Angebotserstellung im Baugewerbe.\
+Deine Aufgabe ist es, einen Leistungsverzeichnis (LV) Text zu analysieren und ihn in strukturierte JSON-Daten umzuwandeln.\
+\
+**Dein Output MUSS ein valides JSON-Objekt sein und nichts anderes.**\
+\
+Das JSON-Objekt sollte eine einzelne Property namens "items" haben, die eine Liste von Objekten ist.\
+Jedes Objekt in der "items"-Liste repräsentiert eine Position aus dem LV und muss die folgenden Felder enthalten:\
+- `oz`: (string) Die Ordnungszahl/Positionsnummer (z.B. "01.01.01.0010").\
+- `text`: (string) Der vollständige, unveränderte Beschreibungstext der Position aus dem LV.\
+- `qty`: (number) Die Menge als Fließkommazahl (z.B. 150.0).\
+- `unit`: (string) Die Einheit (z.B. "m2", "Stk", "h").\
+"""
