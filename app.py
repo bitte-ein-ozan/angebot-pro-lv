@@ -707,89 +707,93 @@ def tab_datenbank_verwalten():
                             df_db.to_sql('prices', conn, if_exists='append', index=False)
                             new_items_count = len(df_db)
 
-                    # PDF Import
-                    elif uploaded_file.name.endswith('.pdf'):
-                        full_text = ""
-                        with pdfplumber.open(uploaded_file) as pdf:
-                            # Chunking for AI
-                            pages_text = [page.extract_text() or "" for page in pdf.pages]
-                            full_text = "\n".join(pages_text)
-                        
-                        # DEBUG: Show what we read
-                        with st.expander("🔍 Debug: Extrahierter PDF-Text (Vorschau)", expanded=False):
-                            st.text(full_text[:1000] + "..." if len(full_text) > 1000 else full_text)
-
-                        mapped_data = []
-
-                        # AI Path
-                        if use_ai_import and st.session_state.ai_enabled:
-                            progress_bar = st.progress(0, text="AI analysiert PDF-Seiten...")
-                            for i, page_text in enumerate(pages_text):
-                                if len(page_text) > 50:
-                                    items = extract_pricelist_from_text_ai(page_text)
-                                    for item in items:
-                                        try:
-                                            mapped_data.append({
-                                                'description': item.get('description', ''),
-                                                'unit': item.get('unit', ''),
-                                                'price_min': float(item.get('price', 0)),
-                                                'price_max': float(item.get('price', 0)),
-                                                'category': 'AI PDF Import'
-                                            })
-                                        except: pass
-                                progress_bar.progress((i + 1) / len(pages_text))
-                            progress_bar.empty()
-
-                        # Regex Fallback
-                        if not mapped_data:
-                            # Split by newline to get actual lines
-                            lines = full_text.split('\n')
-                            for line in lines:
-                                line = line.strip()
-                                if not line: continue
-                                
-                                # Flexible Regex for Price List Items
-                                # Matches: "Description text ... 12,34" or "Description 12,34 €"
-                                # Group 1: Description
-                                # Group 2: Price
-                                # Group 3: Unit (optional)
-                                match = re.search(r'^(.*?)\s+(\d+[\.,]\d{2})\s*([€a-zA-Z].*)?$', line)
-                                
-                                if match:
-                                    desc = match.group(1).strip()
-                                    price_str = match.group(2).replace('.', '').replace(',', '.')
-                                    unit_part = match.group(3).strip() if match.group(3) else ""
-                                    
-                                    # Clean up unit (remove € symbol)
-                                    unit = unit_part.replace('€', '').strip()
-                                    
-                                    try:
-                                        price_val = float(price_str)
-                                        # Heuristic: Valid description usually longer than 3 chars
-                                        # and valid price is reasonable
-                                        if len(desc) > 3: 
-                                            mapped_data.append({
-                                                'description': desc,
-                                                'unit': unit,
-                                                'price_min': price_val,
-                                                'price_max': price_val,
-                                                'category': 'PDF Import'
-                                            })
-                                    except: pass
-
-                        if mapped_data:
-                            df_db = pd.DataFrame(mapped_data)
-                            df_db.to_sql('prices', conn, if_exists='append', index=False)
-                            new_items_count = len(df_db)
-
-                    conn.close()
-
-                    if new_items_count > 0:
-                        st.success(f"{new_items_count} Artikel erfolgreich importiert!")
-                        st.rerun()
-                    else:
-                        st.warning("Keine importierbaren Daten gefunden. Bitte Format prüfen oder AI-Import aktivieren.")
-
+                                        # PDF Import
+                                        elif uploaded_file.name.endswith('.pdf'):
+                                            full_text = ""
+                                            with pdfplumber.open(uploaded_file) as pdf:
+                                                pages_text = [page.extract_text() or "" for page in pdf.pages]
+                                                full_text = "\n".join(pages_text)
+                    
+                                            # DEBUG: Show what we read
+                                            with st.expander("🔍 Debug: Extrahierter PDF-Text (Vorschau)", expanded=False):
+                                                st.text(full_text[:1000] + "..." if len(full_text) > 1000 else full_text)
+                    
+                                            mapped_data = []
+                                            ai_failed = False
+                    
+                                            # 1. Try AI Import (if enabled)
+                                            if use_ai_import and st.session_state.ai_enabled:
+                                                progress_bar = st.progress(0, text="AI analysiert PDF-Seiten...")
+                                                for i, page_text in enumerate(pages_text):
+                                                    if len(page_text) > 50:
+                                                        # Try to extract
+                                                        items = extract_pricelist_from_text_ai(page_text)
+                                                        
+                                                        # If AI returns nothing or blocked, mark as failed to trigger fallback
+                                                        if not items:
+                                                            # We don't stop immediately to try other pages, but we track failure
+                                                            pass
+                                                        
+                                                        for item in items:
+                                                            try:
+                                                                mapped_data.append({
+                                                                    'description': item.get('description', ''),
+                                                                    'unit': item.get('unit', ''),
+                                                                    'price_min': float(item.get('price', 0)),
+                                                                    'price_max': float(item.get('price', 0)),
+                                                                    'category': 'AI PDF Import'
+                                                                })
+                                                            except: pass
+                                                    progress_bar.progress((i + 1) / len(pages_text))
+                                                progress_bar.empty()
+                                                
+                                                if not mapped_data:
+                                                    ai_failed = True
+                                                    st.warning("KI-Import blockiert oder keine Daten erkannt. Wechsle zum Standard-Import...")
+                    
+                                            # 2. Regex Fallback (if AI disabled or failed)
+                                            if not mapped_data or ai_failed or not use_ai_import:
+                                                # Robust Regex for Price Lists
+                                                # Looks for lines ending in a price: "Some Text 12,50" or "Some Text 12.50"
+                                                # Optional: Unit and Currency
+                                                lines = full_text.split('\n')
+                                                for line in lines:
+                                                    line = line.strip()
+                                                    if not line or len(line) < 5: continue
+                                                    
+                                                    # Pattern: Description (greedy) + Space + Price (number with , or .) + Optional Unit/Currency
+                                                    # Example: "Beton C25/30 145,00" -> Desc: "Beton C25/30", Price: "145,00"
+                                                    match = re.search(r'^(.*?)\s+(\d+[\.,]\d{2})\s*([a-zA-Z€/].*)?$', line)
+                                                    
+                                                    if match:
+                                                        desc = match.group(1).strip()
+                                                        price_str = match.group(2).replace('.', '').replace(',', '.')
+                                                        unit_raw = match.group(3) if match.group(3) else ""
+                                                        
+                                                        # Clean unit
+                                                        unit = unit_raw.replace('€', '').replace('/', '').strip()
+                                                        
+                                                        try:
+                                                            price_val = float(price_str)
+                                                            # Filter out likely page numbers or dates (too small price or too short text)
+                                                            if len(desc) > 3 and 0.1 < price_val < 100000:
+                                                                mapped_data.append({
+                                                                    'description': desc,
+                                                                    'unit': unit,
+                                                                    'price_min': price_val,
+                                                                    'price_max': price_val,
+                                                                    'category': 'PDF Standard Import'
+                                                                })
+                                                        except: pass
+                    
+                                            if mapped_data:
+                                                df_db = pd.DataFrame(mapped_data)
+                                                df_db.to_sql('prices', conn, if_exists='append', index=False)
+                                                new_items_count = len(df_db)
+                                                st.success(f"{new_items_count} Artikel erfolgreich importiert!")
+                                                st.rerun()
+                                            else:
+                                                st.error("Konnte keine Daten importieren. Bitte prüfen Sie, ob das PDF Text enthält (kein reiner Scan).")
                 except Exception as e:
                     st.error(f"Fehler beim Import: {e}")
 
