@@ -846,7 +846,60 @@ def tab_verlauf():
         st.dataframe(df, use_container_width=True)
     except: st.info("Leer")
 
+def setup_mobile_css():
+    st.markdown("""
+    <style>
+        /* --- MOBILE OPTIMIZATIONS --- */
+        @media (max-width: 768px) {
+            /* Better padding for touch */
+            .stApp {
+                padding-top: 1rem;
+            }
+            
+            /* Stack columns on mobile */
+            [data-testid="column"] {
+                width: 100% !important;
+                flex: 1 1 auto !important;
+                min-width: 100% !important;
+            }
+            
+            /* Make buttons full width for easy tapping */
+            div.stButton > button {
+                width: 100%;
+                margin-top: 0.5rem;
+                padding: 0.8rem 1rem; /* Larger touch target */
+            }
+            
+            /* Adjust Headers */
+            h1 {
+                font-size: 1.8rem;
+                text-align: left; /* Easier to read on small screens */
+            }
+            
+            /* Metric Cards */
+            [data-testid="stMetric"] {
+                padding: 12px;
+                margin-bottom: 10px;
+            }
+            [data-testid="stMetricValue"] {
+                font-size: 1.4rem;
+            }
+            
+            /* Hide Sidebar by default (handled by Streamlit, but style overlay) */
+            section[data-testid="stSidebar"] {
+                box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+            }
+            
+            /* Data Editor scrolling */
+            [data-testid="stDataFrame"] {
+                overflow-x: auto;
+            }
+        }
+    </style>
+    """, unsafe_allow_html=True)
+
 def main():
+    setup_mobile_css()
     display_sidebar()
     t1, t2, t3 = st.tabs(["Angebot", "Datenbank", "Verlauf"])
     with t1: tab_angebot_erstellen()
