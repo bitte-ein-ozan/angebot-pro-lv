@@ -1013,6 +1013,28 @@ def setup_premium_design():
             box-shadow: 0 4px 12px rgba(0,0,0,0.03) !important;
         }
 
+        /* --- FILE UPLOADER (Idiot-Proof Dropzone) --- */
+        section[data-testid="stFileUploaderDropzone"] {
+            border: 2px dashed var(--primary) !important;
+            background-color: rgba(59, 130, 246, 0.05) !important;
+            border-radius: 20px !important;
+            padding: 30px !important;
+            transition: all 0.3s ease;
+        }
+
+        section[data-testid="stFileUploaderDropzone"]:hover {
+            background-color: rgba(59, 130, 246, 0.1) !important;
+            border-color: var(--primary-dark) !important;
+            transform: scale(1.01);
+        }
+        
+        /* Make the instruction text larger */
+        section[data-testid="stFileUploaderDropzone"] div {
+            font-size: 1.1rem !important;
+            color: var(--primary-dark) !important;
+            font-weight: 600 !important;
+        }
+
         /* --- MOBILE --- */
         @media (max-width: 768px) {
             h1 { font-size: 2rem !important; text-align: left; }
