@@ -852,60 +852,172 @@ def tab_verlauf():
         st.dataframe(df, use_container_width=True)
     except: st.info("Leer")
 
-def setup_mobile_css():
+def setup_premium_design():
     st.markdown("""
     <style>
+        /* IMPORT PREMIUM FONTS */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+        /* --- GLOBAL VARIABLES --- */
+        :root {
+            --primary-color: #2e7d32;
+            --primary-gradient: linear-gradient(135deg, #2e7d32 0%, #43a047 100%);
+            --bg-color: #f8fafc; /* Premium Slate-50 */
+            --card-bg: #ffffff;
+            --text-dark: #0f172a; /* Slate-900 */
+            --text-grey: #64748b; /* Slate-500 */
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        /* --- BASE THEME --- */
+        .stApp {
+            background-color: var(--bg-color);
+            color: var(--text-dark);
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* --- HEADERS (Typography) --- */
+        h1 {
+            font-weight: 700;
+            color: var(--text-dark);
+            letter-spacing: -0.025em;
+            padding-bottom: 2rem;
+            background: linear-gradient(to right, #0f172a, #334155);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-align: center;
+        }
+
+        h2, h3 {
+            font-weight: 600;
+            color: #334155;
+            letter-spacing: -0.015em;
+        }
+
+        /* --- CARDS (Metrics & Data) --- */
+        [data-testid="stMetric"] {
+            background-color: var(--card-bg);
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: var(--shadow-sm);
+            transition: all 0.3s ease;
+        }
+
+        [data-testid="stMetric"]:hover {
+            box-shadow: var(--shadow-lg);
+            transform: translateY(-2px);
+            border-color: var(--primary-color);
+        }
+
+        [data-testid="stMetricLabel"] {
+            color: var(--text-grey);
+            font-size: 0.875rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        [data-testid="stMetricValue"] {
+            color: var(--primary-color);
+            font-size: 2rem;
+            font-weight: 700;
+        }
+
+        /* --- BUTTONS (Gradient & Lift) --- */
+        div.stButton > button[type="primary"] {
+            background: var(--primary-gradient);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            padding: 0.6rem 1.2rem;
+            font-weight: 600;
+            letter-spacing: 0.01em;
+            box-shadow: 0 4px 6px rgba(46, 125, 50, 0.2);
+            transition: all 0.2s ease;
+        }
+
+        div.stButton > button[type="primary"]:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px rgba(46, 125, 50, 0.3);
+        }
+
+        div.stButton > button[type="secondary"] {
+            background-color: white;
+            color: var(--text-dark);
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            font-weight: 500;
+        }
+        
+        div.stButton > button[type="secondary"]:hover {
+            border-color: #cbd5e1;
+            background-color: #f1f5f9;
+        }
+
+        /* --- SIDEBAR --- */
+        section[data-testid="stSidebar"] {
+            background-color: #ffffff;
+            border-right: 1px solid #f1f5f9;
+            box-shadow: 4px 0 24px rgba(0,0,0,0.02);
+        }
+
+        /* --- DATAFRAME / TABLES --- */
+        [data-testid="stDataFrame"] {
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: var(--shadow-sm);
+            background: white;
+        }
+
+        /* --- TABS (Modern Pills) --- */
+        .stTabs [data-baseweb="tab-list"] {
+            gap: 8px;
+            background-color: #f1f5f9;
+            padding: 6px;
+            border-radius: 16px;
+            display: inline-flex;
+        }
+
+        .stTabs [data-baseweb="tab"] {
+            background-color: transparent;
+            border: none;
+            border-radius: 12px;
+            padding: 8px 20px;
+            font-weight: 500;
+            color: var(--text-grey);
+        }
+
+        .stTabs [aria-selected="true"] {
+            background-color: white;
+            color: var(--primary-color);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            font-weight: 600;
+        }
+
+        /* --- INPUT FIELDS --- */
+        .stTextInput input, .stTextArea textarea, .stSelectbox div[data-baseweb="select"] {
+            border-radius: 10px;
+            border-color: #e2e8f0;
+        }
+        
         /* --- MOBILE OPTIMIZATIONS --- */
         @media (max-width: 768px) {
-            /* Better padding for touch */
-            .stApp {
-                padding-top: 1rem;
-            }
-            
-            /* Stack columns on mobile */
-            [data-testid="column"] {
-                width: 100% !important;
-                flex: 1 1 auto !important;
-                min-width: 100% !important;
-            }
-            
-            /* Make buttons full width for easy tapping */
-            div.stButton > button {
-                width: 100%;
-                margin-top: 0.5rem;
-                padding: 0.8rem 1rem; /* Larger touch target */
-            }
-            
-            /* Adjust Headers */
-            h1 {
-                font-size: 1.8rem;
-                text-align: left; /* Easier to read on small screens */
-            }
-            
-            /* Metric Cards */
-            [data-testid="stMetric"] {
-                padding: 12px;
-                margin-bottom: 10px;
-            }
-            [data-testid="stMetricValue"] {
-                font-size: 1.4rem;
-            }
-            
-            /* Hide Sidebar by default (handled by Streamlit, but style overlay) */
-            section[data-testid="stSidebar"] {
-                box-shadow: 2px 0 10px rgba(0,0,0,0.1);
-            }
-            
-            /* Data Editor scrolling */
-            [data-testid="stDataFrame"] {
-                overflow-x: auto;
-            }
+            .stApp { padding-top: 1rem; }
+            [data-testid="column"] { width: 100% !important; flex: 1 1 auto !important; min-width: 100% !important; }
+            div.stButton > button { width: 100%; margin-top: 0.5rem; padding: 0.8rem 1rem; }
+            h1 { font-size: 1.8rem; text-align: left; }
+            [data-testid="stMetric"] { padding: 16px; margin-bottom: 12px; }
+            [data-testid="stDataFrame"] { overflow-x: auto; }
         }
     </style>
     """, unsafe_allow_html=True)
 
 def main():
-    setup_mobile_css()
+    setup_premium_design()
     display_sidebar()
     t1, t2, t3 = st.tabs(["Angebot", "Datenbank", "Verlauf"])
     with t1: tab_angebot_erstellen()
