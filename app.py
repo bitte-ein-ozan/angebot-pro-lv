@@ -805,6 +805,18 @@ def tab_datenbank_verwalten():
         conn.close()
         st.success("Gespeichert")
 
+    st.markdown("---")
+    with st.expander("⚠️ Datenbank zurücksetzen", expanded=False):
+        st.warning("Achtung: Dies löscht ALLE Artikel aus der Preisliste unwiderruflich!")
+        if st.button("🗑️ Alle Daten löschen", type="secondary"):
+            conn = get_db_connection(DB_PATH)
+            conn.execute("DELETE FROM prices")
+            conn.execute("DELETE FROM sqlite_sequence WHERE name='prices'")
+            conn.commit()
+            conn.close()
+            st.error("Datenbank wurde geleert.")
+            st.rerun()
+
 def tab_verlauf():
     st.header("Verlauf")
     try:
