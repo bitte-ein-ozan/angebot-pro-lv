@@ -357,7 +357,13 @@ def find_best_match(item_text, price_db):
         except:
             p_id = -1
             
-        return {'price': row['price_min'], 'description': row['description'], 'unit': row['unit'], 'score': score, 'price_id': p_id}
+        # Safely get Price (prevent None > 0 error)
+        try:
+            price_val = float(row['price_min']) if pd.notna(row['price_min']) else 0.0
+        except:
+            price_val = 0.0
+
+        return {'price': price_val, 'description': row['description'], 'unit': row['unit'], 'score': score, 'price_id': p_id}
 
     return {'price': 0.0, 'description': "--- KEIN TREFFER ---", 'unit': '', 'score': 0, 'price_id': -1}
 
