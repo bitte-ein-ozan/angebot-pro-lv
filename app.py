@@ -491,20 +491,22 @@ def generate_pdf(df, project_name, total_price, recipient_address=""):
 # --- UI Functions ---
 def display_sidebar():
     with st.sidebar:
-        # LOGO (SVG + CSS)
+        # LOGO (SVG + CSS) - Robust Version
         st.markdown(f"""
-        <div style="display: flex; align-items: center; margin-bottom: 20px; padding: 10px; background: linear-gradient(135deg, rgba(255,255,255,0.8), rgba(255,255,255,0.3)); border-radius: 12px; border: 1px solid rgba(255,255,255,0.5); box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
-            <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-right: 12px;">
-                <rect x="8" y="6" width="24" height="28" rx="4" stroke="#3b82f6" stroke-width="3" fill="white"/>
-                <path d="M14 14H26" stroke="#3b82f6" stroke-width="3" stroke-linecap="round"/>
-                <path d="M14 20H26" stroke="#3b82f6" stroke-width="3" stroke-linecap="round"/>
-                <path d="M14 26H20" stroke="#3b82f6" stroke-width="3" stroke-linecap="round"/>
-                <circle cx="28" cy="28" r="8" fill="#2563eb" stroke="white" stroke-width="2"/>
-                <path d="M25 28L27 30L31 26" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
+        <div style="display: flex; align-items: center; margin-bottom: 20px; padding: 12px; background: white !important; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
+            <div style="min-width: 40px; margin-right: 12px;">
+                <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" style="display: block;">
+                    <rect x="8" y="6" width="24" height="28" rx="4" stroke="#2563eb" stroke-width="3" fill="white"/>
+                    <path d="M14 14H26" stroke="#2563eb" stroke-width="3" stroke-linecap="round"/>
+                    <path d="M14 20H26" stroke="#2563eb" stroke-width="3" stroke-linecap="round"/>
+                    <path d="M14 26H20" stroke="#2563eb" stroke-width="3" stroke-linecap="round"/>
+                    <circle cx="28" cy="28" r="8" fill="#1d4ed8" stroke="white" stroke-width="2"/>
+                    <path d="M25 28L27 30L31 26" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </div>
             <div>
-                <h1 style="margin: 0; font-size: 1.4rem; background: linear-gradient(135deg, #1e293b 0%, #3b82f6 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; border: none; padding: 0; text-align: left;">Angebot Pro</h1>
-                <p style="margin: 0; font-size: 0.7rem; color: #64748b; font-weight: 500; letter-spacing: 0.05em;">SMART CALCULATION</p>
+                <h1 style="margin: 0 !important; font-size: 1.4rem !important; color: #1e293b !important; border: none !important; padding: 0 !important; text-align: left !important; background: none !important; -webkit-text-fill-color: initial !important;">Angebot Pro</h1>
+                <p style="margin: 0 !important; font-size: 0.75rem !important; color: #64748b !important; font-weight: 600 !important; letter-spacing: 0.05em !important; text-transform: uppercase !important;">Smart Calculation</p>
             </div>
         </div>
         """, unsafe_allow_html=True)
