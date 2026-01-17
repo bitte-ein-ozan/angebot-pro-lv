@@ -491,6 +491,7 @@ def generate_pdf(df, project_name, total_price, recipient_address=""):
 # --- UI Functions ---
 def display_sidebar():
     with st.sidebar:
+        st.caption("v2.0 Premium Design 💎") # Visual Version Check
         st.title("Angebot Pro")
         st.info("KI-gestützte Angebotskalkulation")
         st.markdown("---")
@@ -873,9 +874,10 @@ def setup_premium_design():
 
         /* --- BASE THEME --- */
         .stApp {
-            background-color: var(--bg-color);
+            background-color: #f0f2f6 !important; /* Force Premium Slate BG */
             color: var(--text-dark);
             font-family: 'Inter', sans-serif;
+            border-top: 6px solid var(--primary-color); /* Visual Proof */
         }
 
         /* --- HEADERS (Typography) --- */
