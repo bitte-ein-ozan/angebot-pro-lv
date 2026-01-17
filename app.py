@@ -371,8 +371,8 @@ def prepare_dataframe_for_display(extracted_items, price_df):
         match = find_best_match(desc, price_df)
 
         status_icon = "🔴"
-        if match['price'] > 0:
-            status_icon = "🟢" if match['score'] > 90 else "🟡"
+        if match and match.get('price', 0) > 0:
+            status_icon = "🟢" if match.get('score', 0) > 90 else "🟡"
 
         results.append({
             'Status': status_icon,
@@ -380,9 +380,9 @@ def prepare_dataframe_for_display(extracted_items, price_df):
             'Beschreibung (LV)': desc,
             'Menge': item.get('quantity', 0),
             'Einheit (LV)': item.get('unit', ''),
-            'Zugeordneter Artikel': match['description'],
-            'Preis (€)': match['price'],
-            'Gesamt (€)': item.get('quantity', 0) * match['price']
+            'Zugeordneter Artikel': match.get('description', '--- KEIN TREFFER ---') if match else '--- KEIN TREFFER ---',
+            'Preis (€)': match.get('price', 0.0) if match else 0.0,
+            'Gesamt (€)': item.get('quantity', 0) * (match.get('price', 0.0) if match else 0.0)
         })
 
     return pd.DataFrame(results)
