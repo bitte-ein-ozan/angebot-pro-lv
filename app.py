@@ -173,13 +173,14 @@ def extract_pricelist_from_text_ai(page_text):
         return []
 
     system_prompt = """
-    Extract price list items from this text.
+    You are a data extraction API.
+    Your task is to extract price list items from the German text provided inside <source_text> tags.
     Ignore headers, footers, and noise.
     For each item, extract:
     - "description": The item text/name (Material, Service).
-    - "price": The unit price (numeric).
+    - "price": The unit price (numeric, float).
     - "unit": The unit (e.g., m2, Stk, psch).
-    Return a JSON array of objects: [{"description": "...", "price": 12.50, "unit": "m2"}]
+    Return ONLY a JSON array of objects. Example: [{"description": "Item", "price": 12.50, "unit": "m2"}]
     If no items found, return [].
     """
 
@@ -188,7 +189,7 @@ def extract_pricelist_from_text_ai(page_text):
             model=AZURE_OPENAI_DEPLOYMENT_NAME,
             messages=[
                 {"role": "system", "content": system_prompt},
-                {"role": "user", "content": page_text}
+                {"role": "user", "content": f"<source_text>\n{page_text}\n</source_text>"}
             ],
             temperature=0.0,
             response_format={"type": "json_object"}
@@ -198,10 +199,18 @@ def extract_pricelist_from_text_ai(page_text):
         # Handle various AI return formats
         if isinstance(data, list): return data
         if isinstance(data, dict):
+            # Check for 'items' key or any list value
+            if 'items' in data and isinstance(data['items'], list):
+                return data['items']
             for k, v in data.items():
                 if isinstance(v, list): return v
         return []
-    except Exception:
+    except APIStatusError as e:
+        if e.status_code == 403:
+            print(f"AI Import Blocked on page: {e}")
+        return []
+    except Exception as e:
+        print(f"AI Import Failed: {e}")
         return []
 
 def analyze_with_azure_ai(full_text):
@@ -704,7 +713,11 @@ def tab_datenbank_verwalten():
                         with pdfplumber.open(uploaded_file) as pdf:
                             # Chunking for AI
                             pages_text = [page.extract_text() or "" for page in pdf.pages]
-                            full_text = "\\n".join(pages_text)
+                            full_text = "\n".join(pages_text)
+                        
+                        # DEBUG: Show what we read
+                        with st.expander("🔍 Debug: Extrahierter PDF-Text (Vorschau)", expanded=False):
+                            st.text(full_text[:1000] + "..." if len(full_text) > 1000 else full_text)
 
                         mapped_data = []
 
@@ -729,19 +742,35 @@ def tab_datenbank_verwalten():
 
                         # Regex Fallback
                         if not mapped_data:
-                            lines = full_text.split('\\n')
+                            # Split by newline to get actual lines
+                            lines = full_text.split('\n')
                             for line in lines:
-                                # Match Text... 12,34
-                                match = re.search(r'^(.*?)\s+(\d+[\.,]\d{2})\s*[€]?', line)
+                                line = line.strip()
+                                if not line: continue
+                                
+                                # Flexible Regex for Price List Items
+                                # Matches: "Description text ... 12,34" or "Description 12,34 €"
+                                # Group 1: Description
+                                # Group 2: Price
+                                # Group 3: Unit (optional)
+                                match = re.search(r'^(.*?)\s+(\d+[\.,]\d{2})\s*([€a-zA-Z].*)?$', line)
+                                
                                 if match:
                                     desc = match.group(1).strip()
                                     price_str = match.group(2).replace('.', '').replace(',', '.')
+                                    unit_part = match.group(3).strip() if match.group(3) else ""
+                                    
+                                    # Clean up unit (remove € symbol)
+                                    unit = unit_part.replace('€', '').strip()
+                                    
                                     try:
                                         price_val = float(price_str)
-                                        if len(desc) > 3: # Filter noise
+                                        # Heuristic: Valid description usually longer than 3 chars
+                                        # and valid price is reasonable
+                                        if len(desc) > 3: 
                                             mapped_data.append({
                                                 'description': desc,
-                                                'unit': '',
+                                                'unit': unit,
                                                 'price_min': price_val,
                                                 'price_max': price_val,
                                                 'category': 'PDF Import'
