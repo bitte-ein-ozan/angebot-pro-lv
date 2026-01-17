@@ -511,6 +511,9 @@ def display_sidebar():
         
         # st.title("Angebot Pro") # Removed title as it is in the logo now
         st.info("KI-gestützte Angebotskalkulation")
+        st.markdown("---")
+
+        if st.session_state.ai_enabled:
             st.success("Azure AI verbunden", icon="✅")
         else:
             st.warning("Azure AI deaktiviert", icon="⚠️")
