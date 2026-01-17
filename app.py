@@ -799,23 +799,36 @@ def tab_datenbank_verwalten():
 
     price_db = load_price_list()
     edited = st.data_editor(price_db, use_container_width=True, num_rows="dynamic")
-    if st.button("Speichern", key="save_db_btn"):
-        conn = get_db_connection(DB_PATH)
-        edited.to_sql('prices', conn, if_exists='replace', index=False)
-        conn.close()
-        st.success("Gespeichert")
+    
+    col_save, col_delete = st.columns([2, 1])
+    
+    with col_save:
+        if st.button("💾 Änderungen speichern", key="save_db_btn", type="primary", use_container_width=True):
+            try:
+                conn = get_db_connection(DB_PATH)
+                edited.to_sql('prices', conn, if_exists='replace', index=False)
+                conn.commit()
+                st.success("Datenbank erfolgreich gespeichert!")
+            except Exception as e:
+                st.error(f"Fehler beim Speichern: {e}")
+            finally:
+                if 'conn' in locals(): conn.close()
 
-    st.markdown("---")
-    with st.expander("⚠️ Datenbank zurücksetzen", expanded=False):
-        st.warning("Achtung: Dies löscht ALLE Artikel aus der Preisliste unwiderruflich!")
-        if st.button("🗑️ Alle Daten löschen", type="secondary"):
-            conn = get_db_connection(DB_PATH)
-            conn.execute("DELETE FROM prices")
-            conn.execute("DELETE FROM sqlite_sequence WHERE name='prices'")
-            conn.commit()
-            conn.close()
-            st.error("Datenbank wurde geleert.")
-            st.rerun()
+    with col_delete:
+        if st.button("🗑️ Alles löschen", key="delete_db_btn", type="secondary", use_container_width=True):
+            try:
+                conn = get_db_connection(DB_PATH)
+                conn.execute("DELETE FROM prices")
+                # Try to clean up sequence if it exists, ignore if not
+                try: conn.execute("DELETE FROM sqlite_sequence WHERE name='prices'")
+                except: pass
+                conn.commit()
+                st.warning("Datenbank wurde vollständig geleert.")
+                st.rerun()
+            except Exception as e:
+                st.error(f"Fehler beim Löschen: {e}")
+            finally:
+                if 'conn' in locals(): conn.close()
 
 def tab_verlauf():
     st.header("Verlauf")
