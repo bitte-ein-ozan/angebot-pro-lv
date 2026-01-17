@@ -491,7 +491,6 @@ def generate_pdf(df, project_name, total_price, recipient_address=""):
 # --- UI Functions ---
 def display_sidebar():
     with st.sidebar:
-        st.caption("v2.0 Premium Design 💎") # Visual Version Check
         st.title("Angebot Pro")
         st.info("KI-gestützte Angebotskalkulation")
         st.markdown("---")
@@ -856,164 +855,121 @@ def tab_verlauf():
 def setup_premium_design():
     st.markdown("""
     <style>
-        /* IMPORT PREMIUM FONTS */
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
-        /* --- GLOBAL VARIABLES --- */
         :root {
-            --primary-color: #2e7d32;
-            --primary-gradient: linear-gradient(135deg, #2e7d32 0%, #43a047 100%);
-            --bg-color: #f8fafc; /* Premium Slate-50 */
+            --primary: #2563eb; /* Royal Blue */
+            --primary-hover: #1d4ed8;
+            --bg-color: #f8fafc;
             --card-bg: #ffffff;
-            --text-dark: #0f172a; /* Slate-900 */
-            --text-grey: #64748b; /* Slate-500 */
-            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --text-main: #1e293b;
+            --text-light: #64748b;
         }
 
-        /* --- BASE THEME --- */
         .stApp {
-            background-color: #f0f2f6 !important; /* Force Premium Slate BG */
-            color: var(--text-dark);
+            background-color: var(--bg-color) !important;
+            color: var(--text-main);
             font-family: 'Inter', sans-serif;
-            border-top: 6px solid var(--primary-color); /* Visual Proof */
         }
 
-        /* --- HEADERS (Typography) --- */
+        /* --- HEADERS --- */
         h1 {
+            color: var(--text-main);
             font-weight: 700;
-            color: var(--text-dark);
-            letter-spacing: -0.025em;
-            padding-bottom: 2rem;
-            background: linear-gradient(to right, #0f172a, #334155);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            text-align: center;
+            letter-spacing: -0.02em;
+            text-align: left; /* Back to professional left-align */
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 1rem;
         }
+        
+        h2, h3 { color: var(--text-main); font-weight: 600; }
 
-        h2, h3 {
-            font-weight: 600;
-            color: #334155;
-            letter-spacing: -0.015em;
-        }
-
-        /* --- CARDS (Metrics & Data) --- */
-        [data-testid="stMetric"] {
-            background-color: var(--card-bg);
-            border: 1px solid #e2e8f0;
-            border-radius: 16px;
-            padding: 24px;
-            box-shadow: var(--shadow-sm);
-            transition: all 0.3s ease;
-        }
-
-        [data-testid="stMetric"]:hover {
-            box-shadow: var(--shadow-lg);
-            transform: translateY(-2px);
-            border-color: var(--primary-color);
-        }
-
-        [data-testid="stMetricLabel"] {
-            color: var(--text-grey);
-            font-size: 0.875rem;
-            font-weight: 500;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-
-        [data-testid="stMetricValue"] {
-            color: var(--primary-color);
-            font-size: 2rem;
-            font-weight: 700;
-        }
-
-        /* --- BUTTONS (Gradient & Lift) --- */
+        /* --- SMART BUTTONS --- */
         div.stButton > button[type="primary"] {
-            background: var(--primary-gradient);
+            background-color: var(--primary);
             color: white;
             border: none;
-            border-radius: 12px;
-            padding: 0.6rem 1.2rem;
-            font-weight: 600;
-            letter-spacing: 0.01em;
-            box-shadow: 0 4px 6px rgba(46, 125, 50, 0.2);
-            transition: all 0.2s ease;
+            border-radius: 8px; /* Modern Soft Square */
+            padding: 0.6rem 1.5rem;
+            font-weight: 500;
+            box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.1), 0 2px 4px -1px rgba(37, 99, 235, 0.06);
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         div.stButton > button[type="primary"]:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 15px rgba(46, 125, 50, 0.3);
+            background-color: var(--primary-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.2);
         }
 
         div.stButton > button[type="secondary"] {
             background-color: white;
-            color: var(--text-dark);
-            border: 1px solid #e2e8f0;
-            border-radius: 12px;
-            font-weight: 500;
+            border: 1px solid #cbd5e1;
+            color: var(--text-main);
+            border-radius: 8px;
         }
         
         div.stButton > button[type="secondary"]:hover {
-            border-color: #cbd5e1;
-            background-color: #f1f5f9;
+            border-color: var(--primary);
+            color: var(--primary);
+            background-color: #eff6ff;
+        }
+
+        /* --- CARDS (Metrics) --- */
+        [data-testid="stMetric"] {
+            background-color: white;
+            border: 1px solid #f1f5f9;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+        }
+        
+        [data-testid="stMetricValue"] {
+            color: var(--primary);
+            font-weight: 700;
         }
 
         /* --- SIDEBAR --- */
         section[data-testid="stSidebar"] {
-            background-color: #ffffff;
-            border-right: 1px solid #f1f5f9;
-            box-shadow: 4px 0 24px rgba(0,0,0,0.02);
+            background-color: white;
+            border-right: 1px solid #e2e8f0;
         }
 
-        /* --- DATAFRAME / TABLES --- */
+        /* --- TABLES --- */
         [data-testid="stDataFrame"] {
             border: 1px solid #e2e8f0;
-            border-radius: 12px;
+            border-radius: 8px;
             overflow: hidden;
-            box-shadow: var(--shadow-sm);
-            background: white;
         }
 
-        /* --- TABS (Modern Pills) --- */
+        /* --- TABS --- */
         .stTabs [data-baseweb="tab-list"] {
-            gap: 8px;
-            background-color: #f1f5f9;
-            padding: 6px;
-            border-radius: 16px;
-            display: inline-flex;
+            gap: 20px;
+            background-color: transparent;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #e2e8f0;
         }
 
         .stTabs [data-baseweb="tab"] {
             background-color: transparent;
             border: none;
-            border-radius: 12px;
-            padding: 8px 20px;
+            padding: 10px 0;
             font-weight: 500;
-            color: var(--text-grey);
+            color: var(--text-light);
+            border-bottom: 2px solid transparent;
+            border-radius: 0;
         }
 
         .stTabs [aria-selected="true"] {
-            background-color: white;
-            color: var(--primary-color);
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            color: var(--primary);
+            border-bottom: 2px solid var(--primary);
             font-weight: 600;
         }
-
-        /* --- INPUT FIELDS --- */
-        .stTextInput input, .stTextArea textarea, .stSelectbox div[data-baseweb="select"] {
-            border-radius: 10px;
-            border-color: #e2e8f0;
-        }
         
-        /* --- MOBILE OPTIMIZATIONS --- */
+        /* Mobile fixes */
         @media (max-width: 768px) {
             .stApp { padding-top: 1rem; }
-            [data-testid="column"] { width: 100% !important; flex: 1 1 auto !important; min-width: 100% !important; }
-            div.stButton > button { width: 100%; margin-top: 0.5rem; padding: 0.8rem 1rem; }
-            h1 { font-size: 1.8rem; text-align: left; }
-            [data-testid="stMetric"] { padding: 16px; margin-bottom: 12px; }
-            [data-testid="stDataFrame"] { overflow-x: auto; }
+            div.stButton > button { width: 100%; margin-top: 0.5rem; }
         }
     </style>
     """, unsafe_allow_html=True)
