@@ -491,18 +491,26 @@ def generate_pdf(df, project_name, total_price, recipient_address=""):
 # --- UI Functions ---
 def display_sidebar():
     with st.sidebar:
-        st.title("Angebot Pro")
-        st.info("KI-gestützte Angebotskalkulation")
-        st.markdown("---")
-        # Logo Placeholder
-        st.markdown("""
-        <div style="border: 2px dashed #ccc; padding: 20px; text-align: center; border-radius: 10px; margin-bottom: 20px; background-color: #f9f9f9;">
-            <h4 style="color: #666; margin: 0;">hier könnte dein logo für 10.000 € stehen</h4>
+        # LOGO (SVG + CSS)
+        st.markdown(f"""
+        <div style="display: flex; align-items: center; margin-bottom: 20px; padding: 10px; background: linear-gradient(135deg, rgba(255,255,255,0.8), rgba(255,255,255,0.3)); border-radius: 12px; border: 1px solid rgba(255,255,255,0.5); box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+            <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-right: 12px;">
+                <rect x="8" y="6" width="24" height="28" rx="4" stroke="#3b82f6" stroke-width="3" fill="white"/>
+                <path d="M14 14H26" stroke="#3b82f6" stroke-width="3" stroke-linecap="round"/>
+                <path d="M14 20H26" stroke="#3b82f6" stroke-width="3" stroke-linecap="round"/>
+                <path d="M14 26H20" stroke="#3b82f6" stroke-width="3" stroke-linecap="round"/>
+                <circle cx="28" cy="28" r="8" fill="#2563eb" stroke="white" stroke-width="2"/>
+                <path d="M25 28L27 30L31 26" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <div>
+                <h1 style="margin: 0; font-size: 1.4rem; background: linear-gradient(135deg, #1e293b 0%, #3b82f6 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; border: none; padding: 0; text-align: left;">Angebot Pro</h1>
+                <p style="margin: 0; font-size: 0.7rem; color: #64748b; font-weight: 500; letter-spacing: 0.05em;">SMART CALCULATION</p>
+            </div>
         </div>
         """, unsafe_allow_html=True)
-        st.markdown("---")
-
-        if st.session_state.ai_enabled:
+        
+        # st.title("Angebot Pro") # Removed title as it is in the logo now
+        st.info("KI-gestützte Angebotskalkulation")
             st.success("Azure AI verbunden", icon="✅")
         else:
             st.warning("Azure AI deaktiviert", icon="⚠️")
