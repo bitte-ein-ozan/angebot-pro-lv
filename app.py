@@ -350,7 +350,14 @@ def find_best_match(item_text, price_db):
              return {'price': 0.0, 'description': "--- KEIN TREFFER ---", 'unit': '', 'score': score, 'price_id': -1}
 
         row = price_db[price_db['description'] == match_text].iloc[0]
-        return {'price': row['price_min'], 'description': row['description'], 'unit': row['unit'], 'score': score, 'price_id': int(row['id'])}
+        
+        # Safely get ID
+        try:
+            p_id = int(row['id']) if pd.notna(row['id']) else -1
+        except:
+            p_id = -1
+            
+        return {'price': row['price_min'], 'description': row['description'], 'unit': row['unit'], 'score': score, 'price_id': p_id}
 
     return {'price': 0.0, 'description': "--- KEIN TREFFER ---", 'unit': '', 'score': 0, 'price_id': -1}
 
