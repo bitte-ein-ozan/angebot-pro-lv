@@ -493,12 +493,12 @@ def display_sidebar():
     with st.sidebar:
         # LOGO (Simple & Robust)
         st.markdown("""
-        <div style="padding: 15px; border-left: 6px solid #2563eb; background: #f1f5f9; border-radius: 4px; margin-bottom: 20px;">
-            <h1 style="margin: 0; font-size: 1.8rem; color: #1e293b; line-height: 1.2;">Angebot Pro</h1>
-            <p style="margin: 0; font-size: 0.8rem; color: #64748b; font-weight: 600; letter-spacing: 1px;">SMART CALCULATION</p>
+        <div style="padding: 16px; border-left: 4px solid #0072F5; background: #F8FAFC; border: 1px solid #E2E8F0; border-left-width: 4px; border-radius: 8px; margin-bottom: 24px;">
+            <h1 style="margin: 0; font-size: 1.6rem; color: #0F172A; line-height: 1.2; font-weight: 700; font-family: 'Inter', sans-serif;">Angebot Pro</h1>
+            <p style="margin-top: 4px; font-size: 0.7rem; color: #64748B; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; font-family: 'JetBrains Mono', monospace;">Smart Calculation</p>
         </div>
         """, unsafe_allow_html=True)
-        
+
         st.info("KI-gestützte Angebotskalkulation")
         st.markdown("---")
 
@@ -858,108 +858,99 @@ def setup_premium_design():
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap');
 
         :root {
-            /* SpaceX / Technical Palette - NO BLACK */
-            --primary: #0072F5; /* Electric Tech Blue */
-            --primary-dark: #005BC4;
-            --background: #F1F5F9; /* Slate 100 - Cool Grey */
-            --surface: #FFFFFF;
-            --text-main: #1E293B; /* Slate 800 - Deep Blue/Grey */
+            --primary: #0072F5; /* Electric Blue */
+            --primary-hover: #0060DF;
+            --bg-color: #F8FAFC; /* Slate 50 */
+            --sidebar-bg: #FFFFFF;
+            --text-main: #0F172A; /* Slate 900 */
             --text-sub: #64748B; /* Slate 500 */
-            --border: #E2E8F0; /* Slate 200 */
-            --shadow: 0 4px 6px -1px rgba(30, 41, 59, 0.05), 0 2px 4px -1px rgba(30, 41, 59, 0.03);
-            --radius: 6px; /* Precise, technical corners */
+            --border: #E2E8F0;
+            --glass-border: rgba(255,255,255,0.4);
+            --radius: 8px;
         }
 
-        /* --- GLOBAL APP CONTAINER --- */
+        /* --- GRID BACKGROUND --- */
         .stApp {
-            background-color: var(--background) !important;
+            background-color: var(--bg-color) !important;
+            background-image: radial-gradient(#CBD5E1 1px, transparent 1px) !important;
+            background-size: 32px 32px !important;
             font-family: 'Inter', system-ui, sans-serif !important;
             color: var(--text-main) !important;
         }
 
-        /* --- TYPOGRAPHY (Precision) --- */
+        /* --- HEADERS --- */
         h1, h2, h3 {
             font-family: 'Inter', sans-serif !important;
+            letter-spacing: -0.025em !important;
             color: var(--text-main) !important;
-            letter-spacing: -0.02em !important;
         }
 
         h1 {
             font-weight: 700 !important;
-            font-size: 2.0rem !important;
+            font-size: 2.2rem !important;
             border-bottom: 1px solid var(--border);
             padding-bottom: 1rem !important;
             margin-bottom: 2rem !important;
-            text-align: left; /* Technical layout */
         }
 
-        /* Monospace accents for data */
-        code, .stMetricLabel {
-            font-family: 'JetBrains Mono', monospace !important;
-        }
-
-        /* --- SIDEBAR (Frosted Tech) --- */
+        /* --- SIDEBAR --- */
         section[data-testid="stSidebar"] {
-            background-color: #FFFFFF !important;
+            background-color: var(--sidebar-bg) !important;
             border-right: 1px solid var(--border);
+            box-shadow: 2px 0 10px rgba(0,0,0,0.02);
         }
 
         section[data-testid="stSidebar"] h1 {
-            font-size: 1.4rem !important;
-            border-bottom: none;
-            color: var(--primary) !important;
+            font-size: 1.2rem !important;
+            border: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
         }
 
-        /* --- CARDS & PANELS --- */
+        /* --- CARDS & SURFACES --- */
         [data-testid="stMetric"], [data-testid="stExpander"] {
-            background: var(--surface) !important;
-            border: 1px solid var(--border);
-            border-radius: var(--radius) !important;
-            box-shadow: var(--shadow) !important;
-            padding: 20px !important;
+            background: rgba(255, 255, 255, 0.8) !important;
+            backdrop-filter: blur(12px) !important;
+            border: 1px solid rgba(226, 232, 240, 0.8) !important;
+            border-radius: 12px !important;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05) !important;
+            transition: transform 0.2s ease, box-shadow 0.2s ease !important;
         }
 
-        [data-testid="stMetricLabel"] {
-            color: var(--text-sub) !important;
-            font-size: 0.75rem !important;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
+        [data-testid="stMetric"]:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 114, 245, 0.1) !important;
+            border-color: rgba(0, 114, 245, 0.3) !important;
         }
 
-        [data-testid="stMetricValue"] {
-            color: var(--text-main) !important;
-            font-weight: 600 !important;
-        }
-
-        /* --- BUTTONS (Engineered) --- */
+        /* --- BUTTONS (Tactile) --- */
         div.stButton > button {
-            border-radius: 6px !important; /* Technical */
+            border-radius: 6px !important;
             font-weight: 500 !important;
-            transition: all 0.15s ease-out !important;
-            text-transform: none !important;
-            letter-spacing: 0.01em !important;
             height: auto !important;
             padding: 0.6rem 1.2rem !important;
+            font-feature-settings: "tnum";
+            transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1) !important;
         }
 
         div.stButton > button[type="primary"] {
             background: var(--primary) !important;
+            border: 1px solid var(--primary-hover) !important;
             color: white !important;
-            border: 1px solid var(--primary) !important;
-            box-shadow: 0 1px 2px rgba(0, 114, 245, 0.2) !important;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.1) !important;
         }
 
         div.stButton > button[type="primary"]:hover {
-            background: var(--primary-dark) !important;
-            border-color: var(--primary-dark) !important;
+            background: var(--primary-hover) !important;
             transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(0, 114, 245, 0.3) !important;
+            box-shadow: 0 4px 12px rgba(0, 114, 245, 0.4), inset 0 1px 0 rgba(255,255,255,0.1) !important;
         }
 
         div.stButton > button[type="secondary"] {
             background: white !important;
             border: 1px solid var(--border) !important;
             color: var(--text-main) !important;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05) !important;
         }
 
         div.stButton > button[type="secondary"]:hover {
@@ -968,48 +959,60 @@ def setup_premium_design():
             background: #F8FAFC !important;
         }
 
-        /* --- TABS (Segmented Control) --- */
+        /* --- INPUTS --- */
+        .stTextInput input, .stTextArea textarea, .stSelectbox div[data-baseweb="select"] {
+            background-color: white !important;
+            border: 1px solid var(--border) !important;
+            border-radius: 6px !important;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05) !important;
+            transition: border-color 0.2s !important;
+        }
+
+        .stTextInput input:focus, .stTextArea textarea:focus {
+            border-color: var(--primary) !important;
+            box-shadow: 0 0 0 3px rgba(0, 114, 245, 0.1) !important;
+        }
+
+        /* --- TABS --- */
         .stTabs [data-baseweb="tab-list"] {
-            gap: 0px;
-            background-color: #E2E8F0; /* Track color */
-            padding: 2px;
+            background: white;
+            padding: 4px;
             border-radius: 8px;
-            display: inline-flex;
-            margin-bottom: 2rem;
+            border: 1px solid var(--border);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            gap: 4px;
         }
 
         .stTabs [data-baseweb="tab"] {
-            background-color: transparent;
-            border: none;
-            border-radius: 6px;
-            padding: 6px 20px;
-            font-weight: 500;
-            color: var(--text-sub);
             height: 32px;
+            border-radius: 6px;
+            color: var(--text-sub);
+            font-weight: 500;
         }
 
         .stTabs [aria-selected="true"] {
-            background-color: white !important;
-            color: var(--text-main) !important;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1) !important;
+            background-color: var(--bg-color) !important;
+            color: var(--primary) !important;
+            font-weight: 600 !important;
         }
 
-        /* --- INPUTS & TABLES --- */
-        .stTextInput input, .stTextArea textarea, .stSelectbox div[data-baseweb="select"] {
-            border-radius: 6px !important;
-            border: 1px solid var(--border) !important;
-        }
-
+        /* --- DATAFRAME --- */
         [data-testid="stDataFrame"] {
-            border: 1px solid var(--border) !important;
-            border-radius: var(--radius) !important;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            background: white;
         }
 
-        /* --- UPLOAD AREA --- */
+        /* --- UPLOAD --- */
         section[data-testid="stFileUploaderDropzone"] {
+            background: #F8FAFC !important;
             border: 1px dashed var(--border) !important;
-            background-color: #F8FAFC !important;
-            border-radius: var(--radius) !important;
+            border-radius: 12px !important;
+        }
+        section[data-testid="stFileUploaderDropzone"]:hover {
+            border-color: var(--primary) !important;
+            background: #F1F5F9 !important;
         }
     </style>
     """, unsafe_allow_html=True)
