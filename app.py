@@ -64,6 +64,12 @@ def init_test_db():
     if not os.path.exists(paths['history']) and os.path.exists(GLOBAL_HISTORY_DB_PATH):
         shutil.copy(GLOBAL_HISTORY_DB_PATH, paths['history'])
 
+def toggle_test_mode():
+    """Toggles test mode and initializes the test DB if activated."""
+    st.session_state.test_mode = st.session_state.get('test_mode_toggle', False)
+    if st.session_state.test_mode:
+        init_test_db()
+
 # --- Initialisation ---
 st.set_page_config(page_title="Angebot Pro", layout="wide", page_icon="🏗️")
 
@@ -542,24 +548,19 @@ def display_sidebar():
         # --- PREMIUM AD SPACE (CSS Styled - Safer) ---
         st.markdown("""
         <div class="premium-ad-slot">
-            <!-- Accent Bar -->
             <div class="accent-bar"></div>
 
-            <!-- Icon -->
             <div class="icon">💎</div>
 
-            <!-- Main Text -->
             <div class="text">
                 DEIN LOGO
             </div>
 
-            <!-- Badge -->
             <div class="ad-badge">
                 Platzierung: 10.000 €
             </div>
         </div>
 
-        <!-- --- APP BRANDING (Technical) --- -->
         <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px; padding-left: 4px;">
             <div style="
                 width: 36px; height: 36px;
@@ -581,6 +582,17 @@ def display_sidebar():
         """, unsafe_allow_html=True)
 
         st.info("KI-gestützte Angebotskalkulation")
+        st.markdown("---")
+
+        st.checkbox(
+            "🧪 Test-Modus (Isolierte DB)",
+            value=st.session_state.get('test_mode', False),
+            key='test_mode_toggle',
+            on_change=toggle_test_mode
+        )
+        if st.session_state.get('test_mode', False):
+            st.warning("🔴 TEST-MODUS AKTIV\nDatenbank ist isoliert.")
+
         st.markdown("---")
 
         if st.session_state.ai_enabled:
@@ -730,7 +742,7 @@ def tab_datenbank_verwalten():
         if uploaded_file is not None:
             if st.button("Import starten"):
                 try:
-                    conn = get_db_connection(DB_PATH)
+                    conn = get_db_connection(get_active_paths()['prices'])
                     new_items_count = 0
 
                     # Excel Import
@@ -899,7 +911,7 @@ def tab_datenbank_verwalten():
     with col_save:
         if st.button("💾 Änderungen speichern", key="save_db_btn", type="primary", use_container_width=True):
             try:
-                conn = get_db_connection(DB_PATH)
+                conn = get_db_connection(get_active_paths()['prices'])
                 edited.to_sql('prices', conn, if_exists='replace', index=False)
                 conn.commit()
                 st.success("Datenbank erfolgreich gespeichert!")
@@ -911,7 +923,7 @@ def tab_datenbank_verwalten():
     with col_delete:
         if st.button("🗑️ Alles löschen", key="delete_db_btn", type="secondary", use_container_width=True):
             try:
-                conn = get_db_connection(DB_PATH)
+                conn = get_db_connection(get_active_paths()['prices'])
                 conn.execute("DELETE FROM prices")
                 # Try to clean up sequence if it exists, ignore if not
                 try: conn.execute("DELETE FROM sqlite_sequence WHERE name='prices'")
@@ -927,7 +939,7 @@ def tab_datenbank_verwalten():
 def tab_verlauf():
     st.header("Verlauf")
     try:
-        conn = get_db_connection(HISTORY_DB_PATH)
+        conn = get_db_connection(get_active_paths()['history'])
         df = pd.read_sql("SELECT * FROM angebote ORDER BY timestamp DESC", conn)
         conn.close()
         st.dataframe(df, use_container_width=True)
