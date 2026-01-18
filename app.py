@@ -1077,7 +1077,7 @@ def display_benno_chat():
         /* Force the Popover container to float bottom-right */
         div[data-testid="stPopover"] {
             position: fixed !important;
-            bottom: 30px !important;
+            bottom: 100px !important; /* Higher position */
             right: 30px !important;
             width: auto !important;
             height: auto !important;
@@ -1088,13 +1088,13 @@ def display_benno_chat():
 
         /* Style the Button inside to be a blue circle */
         div[data-testid="stPopover"] > button {
-            width: 60px !important;
-            height: 60px !important;
+            width: 70px !important; /* Bigger */
+            height: 70px !important;
             border-radius: 50% !important;
-            background-color: #2563eb !important; /* Vivid Blue */
+            background: linear-gradient(135deg, #0055ff 0%, #0033aa 100%) !important; /* Thick Blue Gradient */
             color: white !important;
-            border: none !important;
-            box-shadow: 0 4px 14px rgba(0,0,0,0.25) !important;
+            border: 2px solid white !important; /* Bold look */
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3) !important;
             display: flex !important;
             align-items: center !important;
             justify-content: center !important;
@@ -1105,8 +1105,8 @@ def display_benno_chat():
         /* Hover effect */
         div[data-testid="stPopover"] > button:hover {
             transform: scale(1.1);
-            background-color: #1d4ed8 !important;
-            box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4) !important;
+            background: linear-gradient(135deg, #0066ff 0%, #0044bb 100%) !important;
+            box-shadow: 0 12px 30px rgba(0,0,0,0.4) !important;
         }
 
         /* Icon sizing fix */
@@ -1118,10 +1118,11 @@ def display_benno_chat():
 
         /* Ensure no weird text rendering */
         div[data-testid="stPopover"] > button p {
-            font-size: 24px !important;
+            font-size: 32px !important; /* Bigger Icon */
             margin: 0 !important;
             padding: 0 !important;
             line-height: 1 !important;
+            font-weight: bold !important;
         }
     </style>
     """, unsafe_allow_html=True)
