@@ -1087,11 +1087,11 @@ def display_benno_chat():
         }
 
         /* Style the Button inside to be a blue circle */
-        div[data-testid="stPopover"] > button {
+        div[data-testid="stPopover"] button {
             width: 70px !important; /* Bigger */
             height: 70px !important;
             border-radius: 50% !important;
-            background: linear-gradient(135deg, #0055ff 0%, #0033aa 100%) !important; /* Thick Blue Gradient */
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important; /* Theme Blue Gradient */
             color: white !important;
             border: 2px solid white !important; /* Bold look */
             box-shadow: 0 8px 25px rgba(0,0,0,0.3) !important;
@@ -1103,21 +1103,21 @@ def display_benno_chat():
         }
 
         /* Hover effect */
-        div[data-testid="stPopover"] > button:hover {
+        div[data-testid="stPopover"] button:hover {
             transform: scale(1.1);
-            background: linear-gradient(135deg, #0066ff 0%, #0044bb 100%) !important;
+            background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%) !important; /* Lighter Blue Hover */
             box-shadow: 0 12px 30px rgba(0,0,0,0.4) !important;
         }
 
         /* Icon sizing fix */
-        div[data-testid="stPopover"] > button > div {
+        div[data-testid="stPopover"] button div {
             display: flex;
             align-items: center;
             justify-content: center;
         }
 
         /* Ensure no weird text rendering */
-        div[data-testid="stPopover"] > button p {
+        div[data-testid="stPopover"] button p {
             font-size: 32px !important; /* Bigger Icon */
             margin: 0 !important;
             padding: 0 !important;
@@ -1147,7 +1147,7 @@ def display_benno_chat():
         # We use a form to allow 'Enter' to submit without rerunning the whole app logic visibly
         with st.form(key="chat_form", clear_on_submit=True):
             user_input = st.text_input("Ihre Frage...", key="benno_input")
-            submit = st.form_submit_button("Senden", use_container_width=True)
+            submit = st.form_submit_button("Senden", type="primary", use_container_width=True)
 
             if submit and user_input:
                 # Add User Message
