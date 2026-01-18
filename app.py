@@ -491,35 +491,81 @@ def generate_pdf(df, project_name, total_price, recipient_address=""):
 # --- UI Functions ---
 def display_sidebar():
     with st.sidebar:
-        # LOGO PLACEHOLDER (High Value)
+        # --- PREMIUM AD SPACE (Designed as a Product) ---
         st.markdown("""
         <div style="
-            border: 2px dashed #94A3B8;
-            border-radius: 8px;
+            background: linear-gradient(135deg, #FFFFFF 0%, #F1F5F9 100%);
+            border: 1px solid #CBD5E1;
+            border-radius: 12px;
             padding: 24px 16px;
             text-align: center;
-            margin-bottom: 24px;
-            background: rgba(241, 245, 249, 0.5);
+            margin-bottom: 32px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), inset 0 1px 0 rgba(255,255,255,0.8);
+            position: relative;
+            overflow: hidden;
             transition: all 0.3s ease;
             cursor: pointer;
-        " onmouseover="this.style.borderColor='#0072F5'; this.style.background='rgba(0, 114, 245, 0.05)';"
-          onmouseout="this.style.borderColor='#94A3B8'; this.style.background='rgba(241, 245, 249, 0.5)';">
-            <div style="font-size: 2rem; margin-bottom: 8px;">💎</div>
+        " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 10px 15px -3px rgba(0,0,0,0.1)';"
+          onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 6px -1px rgba(0,0,0,0.05)';">
+
+            <!-- Accent Bar -->
+            <div style="
+                position: absolute; top: 0; left: 0; right: 0; height: 4px;
+                background: linear-gradient(90deg, #0072F5, #60A5FA);
+            "></div>
+
+            <!-- Icon -->
+            <div style="font-size: 2.2rem; margin-bottom: 8px; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));">💎</div>
+
+            <!-- Main Text -->
             <div style="
                 font-family: 'Inter', sans-serif;
-                font-size: 0.85rem;
-                font-weight: 600;
-                color: #64748B;
-                line-height: 1.4;
+                font-weight: 800;
+                font-size: 1.1rem;
+                color: #1E293B;
+                letter-spacing: -0.03em;
+                margin-bottom: 6px;
+                line-height: 1.2;
             ">
-                Für 10.000 €<br>könnte Dein Logo<br>hier stehen
+                DEIN LOGO
+            </div>
+
+            <!-- Badge -->
+            <div style="
+                font-family: 'JetBrains Mono', monospace;
+                font-size: 0.65rem;
+                color: #0072F5;
+                font-weight: 600;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+                background: rgba(0, 114, 245, 0.08);
+                border: 1px solid rgba(0, 114, 245, 0.1);
+                padding: 4px 10px;
+                border-radius: 99px;
+                display: inline-block;
+            ">
+                Platzierung: 10.000 €
             </div>
         </div>
 
-        <!-- APP TITLE -->
-        <div style="padding-left: 8px; margin-bottom: 20px;">
-            <h1 style="margin: 0; font-size: 1.4rem; color: #0F172A; font-weight: 700; font-family: 'Inter', sans-serif; letter-spacing: -0.02em;">Angebot Pro</h1>
-            <p style="margin: 4px 0 0 0; font-size: 0.7rem; color: #64748B; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; font-family: 'JetBrains Mono', monospace;">Smart Calculation</p>
+        <!-- --- APP BRANDING (Technical) --- -->
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px; padding-left: 4px;">
+            <div style="
+                width: 36px; height: 36px;
+                background: linear-gradient(135deg, #0072F5 0%, #005BC4 100%);
+                border-radius: 8px;
+                display: flex; align-items: center; justify-content: center;
+                box-shadow: 0 4px 10px rgba(0, 114, 245, 0.2);
+                border: 1px solid rgba(255,255,255,0.1);
+            ">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                </svg>
+            </div>
+            <div>
+                <h1 style="margin: 0; font-size: 1.2rem; color: #0F172A; font-weight: 700; font-family: 'Inter', sans-serif; letter-spacing: -0.02em; border: none; padding: 0;">Angebot Pro</h1>
+                <p style="margin: 2px 0 0 0; font-size: 0.65rem; color: #64748B; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; font-family: 'JetBrains Mono', monospace;">Smart Calc v2.0</p>
+            </div>
         </div>
         """, unsafe_allow_html=True)
 
