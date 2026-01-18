@@ -545,12 +545,11 @@ def generate_pdf(df, project_name, total_price, recipient_address=""):
 # --- UI Functions ---
 def display_sidebar():
     with st.sidebar:
-        # --- PREMIUM AD SPACE (Simple & Sarcastic) ---
-        st.info("💎 **PLATZ FÜR VISIONÄRE**")
-        st.markdown("**Für 10.000 € könnte Dein Logo hier stehen.**")
-        st.caption("*(Wir nehmen auch Bitcoin, Sportwagen oder Inseln.)*")
-
-        st.markdown("---")
+        # --- PREMIUM AD SPACE (Framed & Highlighted) ---
+        with st.container(border=True):
+            st.markdown("### 💎 **PLATZ FÜR VISIONÄRE**")
+            st.markdown("Für 10.000 € könnte Dein Logo hier stehen.")
+            st.caption("*(Wir nehmen auch Bitcoin, Sportwagen oder Inseln.)*")
 
         # --- APP BRANDING ---
         c1, c2 = st.columns([1, 4])
