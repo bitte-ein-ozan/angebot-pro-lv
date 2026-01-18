@@ -1044,9 +1044,60 @@ def setup_premium_design():
     </style>
     """, unsafe_allow_html=True)
 
+def display_floating_chat():
+    # Initialize Chat State
+    if "messages" not in st.session_state:
+        st.session_state.messages = [{"role": "assistant", "content": "Hallo! Ich bin Ihr LV-Assistent. Haben Sie Fragen zum hochgeladenen Dokument?"}]
+    if "chat_open" not in st.session_state:
+        st.session_state.chat_open = False
+
+    # Floating Button Logic via Streamlit is tricky for state toggling without rerun.
+    # We use a trick: An expander that looks like a chat window or a simple sidebar integration.
+    # BUT, for a true "Floating Widget" experience in pure Streamlit, we need to use the Sidebar or a bottom container.
+    
+    # BETTER APPROACH: Put the chat in the Sidebar but style it to look like a chat app, 
+    # OR use a distinct section at the bottom.
+    
+    # Let's upgrade the existing Sidebar Chat to be the primary chat interface
+    # but give it a "Chat Mode" feel.
+    
+    with st.sidebar:
+        st.markdown("---")
+        st.subheader("💬 AI Assistant")
+        
+        # Chat History Container
+        chat_container = st.container()
+        
+        with chat_container:
+            for msg in st.session_state.messages:
+                with st.chat_message(msg["role"]):
+                    st.write(msg["content"])
+        
+        # User Input
+        if prompt := st.chat_input("Frage stellen...", key="sidebar_chat_input"):
+            st.session_state.messages.append({"role": "user", "content": prompt})
+            with chat_container:
+                with st.chat_message("user"):
+                    st.write(prompt)
+            
+            # AI Response
+            if st.session_state.get('current_pdf_text'):
+                response = ask_pdf_chatbot(prompt, st.session_state.current_pdf_text)
+            else:
+                response = "Bitte laden Sie zuerst ein PDF im Tab 'Angebot' hoch."
+            
+            st.session_state.messages.append({"role": "assistant", "content": response})
+            with chat_container:
+                with st.chat_message("assistant"):
+                    st.write(response)
+
 def main():
     setup_premium_design()
     display_sidebar()
+    
+    # Render Floating Chat (actually inside sidebar for stability)
+    display_floating_chat()
+    
     t1, t2, t3 = st.tabs(["Angebot", "Datenbank", "Verlauf"])
     with t1: tab_angebot_erstellen()
     with t2: tab_datenbank_verwalten()
