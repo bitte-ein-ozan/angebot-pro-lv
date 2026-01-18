@@ -1074,43 +1074,55 @@ def display_benno_chat():
     # CSS for the Floating "Benno" Button
     st.markdown("""
     <style>
-        /* Position the Popover Button (Floating Action Button) */
-        [data-testid="stPopover"] {
-            position: fixed;
-            bottom: 30px;
-            right: 30px;
-            z-index: 99999;
+        /* Force the Popover container to float bottom-right */
+        div[data-testid="stPopover"] {
+            position: fixed !important;
+            bottom: 30px !important;
+            right: 30px !important;
+            width: auto !important;
+            height: auto !important;
+            z-index: 999999 !important;
+            background: transparent !important;
+            border: none !important;
         }
 
-        /* Style the Button inside the Popover container */
-        [data-testid="stPopover"] > button {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            background-color: #2563eb; /* Benno Blue */
-            border: none;
-            box-shadow: 0 4px 14px rgba(0,0,0,0.25);
-            color: white;
-            font-size: 24px;
-            transition: transform 0.2s, box-shadow 0.2s;
+        /* Style the Button inside to be a blue circle */
+        div[data-testid="stPopover"] > button {
+            width: 60px !important;
+            height: 60px !important;
+            border-radius: 50% !important;
+            background-color: #2563eb !important; /* Vivid Blue */
+            color: white !important;
+            border: none !important;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.25) !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+
+        /* Hover effect */
+        div[data-testid="stPopover"] > button:hover {
+            transform: scale(1.1);
+            background-color: #1d4ed8 !important;
+            box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4) !important;
+        }
+
+        /* Icon sizing fix */
+        div[data-testid="stPopover"] > button > div {
             display: flex;
             align-items: center;
             justify-content: center;
         }
 
-        [data-testid="stPopover"] > button:hover {
-            transform: scale(1.1);
-            box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
-            background-color: #1d4ed8;
+        /* Ensure no weird text rendering */
+        div[data-testid="stPopover"] > button p {
+            font-size: 24px !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            line-height: 1 !important;
         }
-
-        /* Tooltip/Badge tweak if needed */
-        [data-testid="stPopover"] > button::after {
-            content: "💬";
-            font-size: 24px;
-        }
-
-        /* Hide the default emoji if we use ::after, or just use emoji in label */
     </style>
     """, unsafe_allow_html=True)
 
