@@ -491,11 +491,35 @@ def generate_pdf(df, project_name, total_price, recipient_address=""):
 # --- UI Functions ---
 def display_sidebar():
     with st.sidebar:
-        # LOGO (Simple & Robust)
+        # LOGO PLACEHOLDER (High Value)
         st.markdown("""
-        <div style="padding: 16px; border-left: 4px solid #0072F5; background: #F8FAFC; border: 1px solid #E2E8F0; border-left-width: 4px; border-radius: 8px; margin-bottom: 24px;">
-            <h1 style="margin: 0; font-size: 1.6rem; color: #0F172A; line-height: 1.2; font-weight: 700; font-family: 'Inter', sans-serif;">Angebot Pro</h1>
-            <p style="margin-top: 4px; font-size: 0.7rem; color: #64748B; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; font-family: 'JetBrains Mono', monospace;">Smart Calculation</p>
+        <div style="
+            border: 2px dashed #94A3B8;
+            border-radius: 8px;
+            padding: 24px 16px;
+            text-align: center;
+            margin-bottom: 24px;
+            background: rgba(241, 245, 249, 0.5);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        " onmouseover="this.style.borderColor='#0072F5'; this.style.background='rgba(0, 114, 245, 0.05)';"
+          onmouseout="this.style.borderColor='#94A3B8'; this.style.background='rgba(241, 245, 249, 0.5)';">
+            <div style="font-size: 2rem; margin-bottom: 8px;">💎</div>
+            <div style="
+                font-family: 'Inter', sans-serif;
+                font-size: 0.85rem;
+                font-weight: 600;
+                color: #64748B;
+                line-height: 1.4;
+            ">
+                Für 10.000 €<br>könnte Dein Logo<br>hier stehen
+            </div>
+        </div>
+
+        <!-- APP TITLE -->
+        <div style="padding-left: 8px; margin-bottom: 20px;">
+            <h1 style="margin: 0; font-size: 1.4rem; color: #0F172A; font-weight: 700; font-family: 'Inter', sans-serif; letter-spacing: -0.02em;">Angebot Pro</h1>
+            <p style="margin: 4px 0 0 0; font-size: 0.7rem; color: #64748B; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; font-family: 'JetBrains Mono', monospace;">Smart Calculation</p>
         </div>
         """, unsafe_allow_html=True)
 
