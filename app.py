@@ -11,6 +11,9 @@ from fpdf import FPDF
 from datetime import datetime
 from thefuzz import process, fuzz
 
+import shutil
+import uuid
+
 # Load environment variables
 load_dotenv()
 
@@ -18,11 +21,54 @@ load_dotenv()
 AZURE_OPENAI_API_KEY = os.getenv("AZURE_OPENAI_API_KEY")
 AZURE_OPENAI_ENDPOINT = os.getenv("AZURE_OPENAI_ENDPOINT")
 AZURE_OPENAI_DEPLOYMENT_NAME = os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME")
-DB_PATH = 'data/prices.db'
-HISTORY_DB_PATH = 'data/history.db'
+
+# Default Global Paths
+GLOBAL_DB_PATH = 'data/prices.db'
+GLOBAL_HISTORY_DB_PATH = 'data/history.db'
+
+# Ensure data dir exists
+os.makedirs('data', exist_ok=True)
+os.makedirs('data/temp', exist_ok=True)
+
+# --- Helper: Active DB Paths ---
+def get_active_paths():
+    """Returns the paths for prices and history DB based on Test Mode."""
+    if st.session_state.get('test_mode', False):
+        # Use session-specific temp files
+        session_id = st.session_state.get('session_id', 'unknown')
+        return {
+            'prices': f'data/temp/prices_{session_id}.db',
+            'history': f'data/temp/history_{session_id}.db'
+        }
+    return {
+        'prices': GLOBAL_DB_PATH,
+        'history': GLOBAL_HISTORY_DB_PATH
+    }
+
+def init_test_db():
+    """Copies production DB to temp DB for testing."""
+    if 'session_id' not in st.session_state:
+        st.session_state.session_id = str(uuid.uuid4())[:8]
+
+    paths = get_active_paths()
+    # Copy Prices if not exists
+    if not os.path.exists(paths['prices']):
+        if os.path.exists(GLOBAL_DB_PATH):
+            shutil.copy(GLOBAL_DB_PATH, paths['prices'])
+        else:
+            # Create empty if global doesn't exist
+            pass
+
+    # Copy History (optional, maybe start clean?)
+    # Let's start history clean for tests usually, but copying is friendlier.
+    if not os.path.exists(paths['history']) and os.path.exists(GLOBAL_HISTORY_DB_PATH):
+        shutil.copy(GLOBAL_HISTORY_DB_PATH, paths['history'])
 
 # --- Initialisation ---
 st.set_page_config(page_title="Angebot Pro", layout="wide", page_icon="🏗️")
+
+if 'session_id' not in st.session_state:
+    st.session_state.session_id = str(uuid.uuid4())[:8]
 
 # Initialize Azure OpenAI client
 if all([AZURE_OPENAI_API_KEY, AZURE_OPENAI_ENDPOINT, AZURE_OPENAI_DEPLOYMENT_NAME]):
@@ -63,7 +109,8 @@ def get_db_connection(db_path):
     return sqlite3.connect(db_path)
 
 def load_price_list():
-    conn = get_db_connection(DB_PATH)
+    db_path = get_active_paths()['prices']
+    conn = get_db_connection(db_path)
     try:
         df = pd.read_sql_query("SELECT * FROM prices", conn)
     except pd.io.sql.DatabaseError:
@@ -82,7 +129,8 @@ def load_price_list():
     return df
 
 def save_to_history(df, file_name, total_price):
-    conn = get_db_connection(HISTORY_DB_PATH)
+    db_path = get_active_paths()['history']
+    conn = get_db_connection(db_path)
     conn.execute("""
         CREATE TABLE IF NOT EXISTS angebote (
             id INTEGER PRIMARY KEY,
@@ -491,47 +539,28 @@ def generate_pdf(df, project_name, total_price, recipient_address=""):
 # --- UI Functions ---
 def display_sidebar():
     with st.sidebar:
-        # --- PREMIUM AD SPACE (Designed as a Product) ---
+        # --- PREMIUM AD SPACE (CSS Styled - Safer) ---
         st.markdown("""
-        <div style="
-            background: linear-gradient(135deg, #FFFFFF 0%, #F1F5F9 100%);
-            border: 1px solid #CBD5E1;
-            border-radius: 12px;
-            padding: 24px 16px;
-            text-align: center;
-            margin-bottom: 32px;
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), inset 0 1px 0 rgba(255,255,255,0.8);
-            position: relative;
-            overflow: hidden;
-            transition: all 0.3s ease;
-            cursor: pointer;
-        " onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 10px 15px -3px rgba(0,0,0,0.1)';"
-          onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 6px -1px rgba(0,0,0,0.05)';">
-
-            <!-- Accent Bar -->
-            <div style="
-                position: absolute; top: 0; left: 0; right: 0; height: 4px;
-                background: linear-gradient(90deg, #0072F5, #60A5FA);
-            "></div>
-
-            <!-- Icon -->
-            <div style="font-size: 2.2rem; margin-bottom: 8px; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));">💎</div>
-
-            <!-- Main Text -->
-            <div style="
-                font-family: 'Inter', sans-serif;
-                font-weight: 800;
-                font-size: 1.1rem;
-                color: #1E293B;
-                letter-spacing: -0.03em;
-                margin-bottom: 6px;
-                line-height: 1.2;
-            ">
-                DEIN LOGO
-            </div>
-
-            <!-- Badge -->
-            <div style="
+        <style>
+            .premium-ad-slot {
+                background: linear-gradient(135deg, #FFFFFF 0%, #F1F5F9 100%);
+                border: 1px solid #CBD5E1;
+                border-radius: 12px;
+                padding: 24px 16px;
+                text-align: center;
+                margin-bottom: 32px;
+                box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), inset 0 1px 0 rgba(255,255,255,0.8);
+                position: relative;
+                overflow: hidden;
+                transition: all 0.3s ease;
+                cursor: pointer;
+            }
+            .premium-ad-slot:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+                border-color: #0072F5;
+            }
+            .ad-badge {
                 font-family: 'JetBrains Mono', monospace;
                 font-size: 0.65rem;
                 color: #0072F5;
@@ -543,7 +572,23 @@ def display_sidebar():
                 padding: 4px 10px;
                 border-radius: 99px;
                 display: inline-block;
-            ">
+            }
+        </style>
+
+        <div class="premium-ad-slot">
+            <!-- Accent Bar -->
+            <div style="position: absolute; top: 0; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, #0072F5, #60A5FA);"></div>
+
+            <!-- Icon -->
+            <div style="font-size: 2.2rem; margin-bottom: 8px; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));">💎</div>
+
+            <!-- Main Text -->
+            <div style="font-family: 'Inter', sans-serif; font-weight: 800; font-size: 1.1rem; color: #1E293B; letter-spacing: -0.03em; margin-bottom: 6px; line-height: 1.2;">
+                DEIN LOGO
+            </div>
+
+            <!-- Badge -->
+            <div class="ad-badge">
                 Platzierung: 10.000 €
             </div>
         </div>
