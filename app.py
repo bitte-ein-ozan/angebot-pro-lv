@@ -1044,60 +1044,120 @@ def setup_premium_design():
     </style>
     """, unsafe_allow_html=True)
 
-def display_floating_chat():
-    # Initialize Chat State
-    if "messages" not in st.session_state:
-        st.session_state.messages = [{"role": "assistant", "content": "Hallo! Ich bin Ihr LV-Assistent. Haben Sie Fragen zum hochgeladenen Dokument?"}]
-    if "chat_open" not in st.session_state:
-        st.session_state.chat_open = False
+def ask_pdf_chatbot(question, context):
+    if not st.session_state.ai_enabled:
+        return "KI ist nicht aktiviert."
 
-    # Floating Button Logic via Streamlit is tricky for state toggling without rerun.
-    # We use a trick: An expander that looks like a chat window or a simple sidebar integration.
-    # BUT, for a true "Floating Widget" experience in pure Streamlit, we need to use the Sidebar or a bottom container.
-    
-    # BETTER APPROACH: Put the chat in the Sidebar but style it to look like a chat app, 
-    # OR use a distinct section at the bottom.
-    
-    # Let's upgrade the existing Sidebar Chat to be the primary chat interface
-    # but give it a "Chat Mode" feel.
-    
-    with st.sidebar:
-        st.markdown("---")
-        st.subheader("💬 AI Assistant")
-        
+    system_prompt = """
+    Du bist ein hilfreicher Assistent für Baukalkulationen.
+    Beantworte die Frage des Nutzers basierend auf dem folgenden Auszug aus einem Leistungsverzeichnis.
+    Fasse dich kurz und präzise.
+    """
+
+    try:
+        # Truncate context to avoid token limits (simple approach)
+        safe_context = context[:20000]
+
+        response = client.chat.completions.create(
+            model=AZURE_OPENAI_DEPLOYMENT_NAME,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": f"Auszug LV:\n{safe_context}\n\nFrage: {question}"}
+            ],
+            temperature=0.3
+        )
+        return response.choices[0].message.content
+    except Exception as e:
+        return f"Fehler: {e}"
+
+def display_benno_chat():
+    # CSS for the Floating "Benno" Button
+    st.markdown("""
+    <style>
+        /* Position the Popover Button (Floating Action Button) */
+        [data-testid="stPopover"] {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 99999;
+        }
+
+        /* Style the Button inside the Popover container */
+        [data-testid="stPopover"] > button {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background-color: #2563eb; /* Benno Blue */
+            border: none;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+            color: white;
+            font-size: 24px;
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        [data-testid="stPopover"] > button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
+            background-color: #1d4ed8;
+        }
+
+        /* Tooltip/Badge tweak if needed */
+        [data-testid="stPopover"] > button::after {
+            content: "💬";
+            font-size: 24px;
+        }
+
+        /* Hide the default emoji if we use ::after, or just use emoji in label */
+    </style>
+    """, unsafe_allow_html=True)
+
+    # Initialize Chat
+    if "messages" not in st.session_state:
+        st.session_state.messages = [{"role": "assistant", "content": "Hallo! Ich helfe Ihnen gerne bei Fragen zum LV."}]
+
+    # The Popover (Floating Button)
+    # Note: We use an empty label because we styled it with CSS/Emoji
+    with st.popover("💬", help="Chat mit dem LV"):
+        st.markdown("### 🏗️ Projekt-Assistent")
+
         # Chat History Container
-        chat_container = st.container()
-        
+        chat_container = st.container(height=300)
         with chat_container:
             for msg in st.session_state.messages:
                 with st.chat_message(msg["role"]):
                     st.write(msg["content"])
-        
-        # User Input
-        if prompt := st.chat_input("Frage stellen...", key="sidebar_chat_input"):
-            st.session_state.messages.append({"role": "user", "content": prompt})
-            with chat_container:
-                with st.chat_message("user"):
-                    st.write(prompt)
-            
-            # AI Response
-            if st.session_state.get('current_pdf_text'):
-                response = ask_pdf_chatbot(prompt, st.session_state.current_pdf_text)
-            else:
-                response = "Bitte laden Sie zuerst ein PDF im Tab 'Angebot' hoch."
-            
-            st.session_state.messages.append({"role": "assistant", "content": response})
-            with chat_container:
-                with st.chat_message("assistant"):
-                    st.write(response)
+
+        # Input Area
+        # We use a form to allow 'Enter' to submit without rerunning the whole app logic visibly
+        with st.form(key="chat_form", clear_on_submit=True):
+            user_input = st.text_input("Ihre Frage...", key="benno_input")
+            submit = st.form_submit_button("Senden", use_container_width=True)
+
+            if submit and user_input:
+                # Add User Message
+                st.session_state.messages.append({"role": "user", "content": user_input})
+
+                # Get Response
+                if st.session_state.get('current_pdf_text'):
+                    with st.spinner("..."):
+                        response = ask_pdf_chatbot(user_input, st.session_state.current_pdf_text)
+                else:
+                    response = "Bitte laden Sie zuerst ein PDF hoch, damit ich antworten kann."
+
+                # Add Assistant Message
+                st.session_state.messages.append({"role": "assistant", "content": response})
+                st.rerun()
 
 def main():
     setup_premium_design()
     display_sidebar()
-    
-    # Render Floating Chat (actually inside sidebar for stability)
-    display_floating_chat()
-    
+
+    # Render Floating Chat
+    display_benno_chat()
+
     t1, t2, t3 = st.tabs(["Angebot", "Datenbank", "Verlauf"])
     with t1: tab_angebot_erstellen()
     with t2: tab_datenbank_verwalten()
