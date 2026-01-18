@@ -541,49 +541,15 @@ def display_sidebar():
     with st.sidebar:
         # --- PREMIUM AD SPACE (CSS Styled - Safer) ---
         st.markdown("""
-        <style>
-            .premium-ad-slot {
-                background: linear-gradient(135deg, #FFFFFF 0%, #F1F5F9 100%);
-                border: 1px solid #CBD5E1;
-                border-radius: 12px;
-                padding: 24px 16px;
-                text-align: center;
-                margin-bottom: 32px;
-                box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), inset 0 1px 0 rgba(255,255,255,0.8);
-                position: relative;
-                overflow: hidden;
-                transition: all 0.3s ease;
-                cursor: pointer;
-            }
-            .premium-ad-slot:hover {
-                transform: translateY(-2px);
-                box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
-                border-color: #0072F5;
-            }
-            .ad-badge {
-                font-family: 'JetBrains Mono', monospace;
-                font-size: 0.65rem;
-                color: #0072F5;
-                font-weight: 600;
-                text-transform: uppercase;
-                letter-spacing: 0.05em;
-                background: rgba(0, 114, 245, 0.08);
-                border: 1px solid rgba(0, 114, 245, 0.1);
-                padding: 4px 10px;
-                border-radius: 99px;
-                display: inline-block;
-            }
-        </style>
-
         <div class="premium-ad-slot">
             <!-- Accent Bar -->
-            <div style="position: absolute; top: 0; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, #0072F5, #60A5FA);"></div>
+            <div class="accent-bar"></div>
 
             <!-- Icon -->
-            <div style="font-size: 2.2rem; margin-bottom: 8px; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));">💎</div>
+            <div class="icon">💎</div>
 
             <!-- Main Text -->
-            <div style="font-family: 'Inter', sans-serif; font-weight: 800; font-size: 1.1rem; color: #1E293B; letter-spacing: -0.03em; margin-bottom: 6px; line-height: 1.2;">
+            <div class="text">
                 DEIN LOGO
             </div>
 
@@ -1128,6 +1094,49 @@ def setup_premium_design():
         section[data-testid="stFileUploaderDropzone"]:hover {
             border-color: var(--primary) !important;
             background: #F1F5F9 !important;
+        }
+
+        /* --- PREMIUM AD SLOT (Sidebar) --- */
+        .premium-ad-slot {
+            background: linear-gradient(135deg, #FFFFFF 0%, #F1F5F9 100%);
+            border: 1px solid #CBD5E1;
+            border-radius: 12px;
+            padding: 24px 16px;
+            text-align: center;
+            margin-bottom: 32px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), inset 0 1px 0 rgba(255,255,255,0.8);
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .premium-ad-slot:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 114, 245, 0.15);
+            border-color: #0072F5;
+        }
+        .premium-ad-slot .accent-bar {
+            position: absolute; top: 0; left: 0; right: 0; height: 4px;
+            background: linear-gradient(90deg, #0072F5, #60A5FA);
+        }
+        .premium-ad-slot .icon {
+            font-size: 2.2rem; margin-bottom: 8px;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));
+        }
+        .premium-ad-slot .text {
+            font-family: 'Inter', sans-serif; font-weight: 800;
+            font-size: 1.1rem; color: #1E293B;
+            letter-spacing: -0.03em; margin-bottom: 6px; line-height: 1.2;
+        }
+        .ad-badge {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.65rem; color: #0072F5;
+            font-weight: 600; text-transform: uppercase;
+            letter-spacing: 0.05em;
+            background: rgba(0, 114, 245, 0.08);
+            border: 1px solid rgba(0, 114, 245, 0.1);
+            padding: 4px 10px; border-radius: 99px;
+            display: inline-block;
         }
     </style>
     """, unsafe_allow_html=True)
