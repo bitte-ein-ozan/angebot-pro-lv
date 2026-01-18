@@ -855,137 +855,125 @@ def tab_verlauf():
 def setup_premium_design():
     st.markdown("""
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap');
 
         :root {
-            --primary: #3b82f6; /* Modern Tech Blue */
-            --primary-dark: #2563eb;
-            --background: #f8fafc;
-            --surface: #ffffff;
-            --text-main: #0f172a;
-            --text-sub: #64748b;
+            /* SpaceX / Technical Palette - NO BLACK */
+            --primary: #0072F5; /* Electric Tech Blue */
+            --primary-dark: #005BC4;
+            --background: #F1F5F9; /* Slate 100 - Cool Grey */
+            --surface: #FFFFFF;
+            --text-main: #1E293B; /* Slate 800 - Deep Blue/Grey */
+            --text-sub: #64748B; /* Slate 500 */
+            --border: #E2E8F0; /* Slate 200 */
+            --shadow: 0 4px 6px -1px rgba(30, 41, 59, 0.05), 0 2px 4px -1px rgba(30, 41, 59, 0.03);
+            --radius: 6px; /* Precise, technical corners */
         }
 
         /* --- GLOBAL APP CONTAINER --- */
         .stApp {
-            background: radial-gradient(circle at top center, #f1f5f9, #f8fafc) !important;
-            font-family: 'Inter', sans-serif !important;
+            background-color: var(--background) !important;
+            font-family: 'Inter', system-ui, sans-serif !important;
             color: var(--text-main) !important;
         }
 
-        /* --- HEADERS (Gradient Text) --- */
-        h1 {
-            font-weight: 800 !important;
-            font-size: 2.5rem !important;
-            letter-spacing: -0.03em !important;
-            background: linear-gradient(135deg, #1e293b 0%, #3b82f6 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            text-align: center;
-            padding-bottom: 1.5rem !important;
-            border-bottom: 1px solid rgba(0,0,0,0.05);
-            margin-bottom: 2rem !important;
-        }
-
-        h2, h3 {
-            font-weight: 700 !important;
-            color: #334155 !important;
+        /* --- TYPOGRAPHY (Precision) --- */
+        h1, h2, h3 {
+            font-family: 'Inter', sans-serif !important;
+            color: var(--text-main) !important;
             letter-spacing: -0.02em !important;
         }
 
-        /* --- MODERN SIDEBAR (Floating Glass) --- */
-        section[data-testid="stSidebar"] {
-            background-color: rgba(255, 255, 255, 0.7) !important;
-            backdrop-filter: blur(12px);
-            border-right: 1px solid rgba(255, 255, 255, 0.5);
-            box-shadow: 20px 0 40px rgba(0,0,0,0.02);
-        }
-        
-        section[data-testid="stSidebar"] h1 {
-            background: none;
-            -webkit-text-fill-color: var(--text-main);
-            text-align: left;
-            font-size: 1.5rem !important;
+        h1 {
+            font-weight: 700 !important;
+            font-size: 2.0rem !important;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 1rem !important;
+            margin-bottom: 2rem !important;
+            text-align: left; /* Technical layout */
         }
 
-        /* --- CARDS & CONTAINERS --- */
+        /* Monospace accents for data */
+        code, .stMetricLabel {
+            font-family: 'JetBrains Mono', monospace !important;
+        }
+
+        /* --- SIDEBAR (Frosted Tech) --- */
+        section[data-testid="stSidebar"] {
+            background-color: #FFFFFF !important;
+            border-right: 1px solid var(--border);
+        }
+
+        section[data-testid="stSidebar"] h1 {
+            font-size: 1.4rem !important;
+            border-bottom: none;
+            color: var(--primary) !important;
+        }
+
+        /* --- CARDS & PANELS --- */
         [data-testid="stMetric"], [data-testid="stExpander"] {
             background: var(--surface) !important;
-            border: 1px solid rgba(255,255,255,0.6);
-            border-radius: 20px !important;
-            box-shadow: 0 10px 30px -10px rgba(0,0,0,0.05) !important;
-            padding: 24px !important;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-
-        [data-testid="stMetric"]:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 20px 40px -10px rgba(59, 130, 246, 0.15) !important;
-            border-color: rgba(59, 130, 246, 0.3);
+            border: 1px solid var(--border);
+            border-radius: var(--radius) !important;
+            box-shadow: var(--shadow) !important;
+            padding: 20px !important;
         }
 
         [data-testid="stMetricLabel"] {
             color: var(--text-sub) !important;
-            font-weight: 600 !important;
+            font-size: 0.75rem !important;
             text-transform: uppercase;
-            font-size: 0.8rem !important;
             letter-spacing: 0.05em;
         }
 
         [data-testid="stMetricValue"] {
-            color: var(--primary-dark) !important;
-            font-size: 2.2rem !important;
-            font-weight: 800 !important;
+            color: var(--text-main) !important;
+            font-weight: 600 !important;
         }
 
-        /* --- BUTTONS (Pill Shaped, High Tech) --- */
+        /* --- BUTTONS (Engineered) --- */
+        div.stButton > button {
+            border-radius: 6px !important; /* Technical */
+            font-weight: 500 !important;
+            transition: all 0.15s ease-out !important;
+            text-transform: none !important;
+            letter-spacing: 0.01em !important;
+            height: auto !important;
+            padding: 0.6rem 1.2rem !important;
+        }
+
         div.stButton > button[type="primary"] {
-            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
+            background: var(--primary) !important;
             color: white !important;
-            border: none;
-            border-radius: 9999px !important; /* Full Pill */
-            padding: 0.75rem 2rem !important;
-            font-weight: 600 !important;
-            letter-spacing: 0.02em;
-            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3) !important;
-            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important; /* Bouncy */
+            border: 1px solid var(--primary) !important;
+            box-shadow: 0 1px 2px rgba(0, 114, 245, 0.2) !important;
         }
 
         div.stButton > button[type="primary"]:hover {
-            transform: scale(1.05);
-            box-shadow: 0 8px 20px rgba(37, 99, 235, 0.4) !important;
+            background: var(--primary-dark) !important;
+            border-color: var(--primary-dark) !important;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 114, 245, 0.3) !important;
         }
 
         div.stButton > button[type="secondary"] {
             background: white !important;
+            border: 1px solid var(--border) !important;
             color: var(--text-main) !important;
-            border: 1px solid #e2e8f0 !important;
-            border-radius: 9999px !important;
-            font-weight: 500 !important;
         }
-        
+
         div.stButton > button[type="secondary"]:hover {
-            background: #f8fafc !important;
             border-color: var(--primary) !important;
             color: var(--primary) !important;
+            background: #F8FAFC !important;
         }
 
-        /* --- DATAFRAME (Clean & Spacious) --- */
-        [data-testid="stDataFrame"] {
-            border: none !important;
-            border-radius: 16px !important;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05) !important;
-            background: white !important;
-            padding: 5px;
-        }
-
-        /* --- TABS (Floating Pills) --- */
+        /* --- TABS (Segmented Control) --- */
         .stTabs [data-baseweb="tab-list"] {
-            gap: 12px;
-            background-color: rgba(255,255,255,0.5);
-            padding: 8px;
-            border-radius: 9999px;
-            border: 1px solid rgba(0,0,0,0.05);
+            gap: 0px;
+            background-color: #E2E8F0; /* Track color */
+            padding: 2px;
+            border-radius: 8px;
             display: inline-flex;
             margin-bottom: 2rem;
         }
@@ -993,53 +981,35 @@ def setup_premium_design():
         .stTabs [data-baseweb="tab"] {
             background-color: transparent;
             border: none;
-            border-radius: 9999px;
-            padding: 8px 24px;
-            font-weight: 600;
+            border-radius: 6px;
+            padding: 6px 20px;
+            font-weight: 500;
             color: var(--text-sub);
-            transition: all 0.2s;
+            height: 32px;
         }
 
         .stTabs [aria-selected="true"] {
             background-color: white !important;
-            color: var(--primary) !important;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05) !important;
+            color: var(--text-main) !important;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1) !important;
         }
 
-        /* --- ALERTS --- */
-        .stAlert {
-            border-radius: 16px !important;
-            border: none !important;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.03) !important;
+        /* --- INPUTS & TABLES --- */
+        .stTextInput input, .stTextArea textarea, .stSelectbox div[data-baseweb="select"] {
+            border-radius: 6px !important;
+            border: 1px solid var(--border) !important;
         }
 
-        /* --- FILE UPLOADER (Idiot-Proof Dropzone) --- */
+        [data-testid="stDataFrame"] {
+            border: 1px solid var(--border) !important;
+            border-radius: var(--radius) !important;
+        }
+
+        /* --- UPLOAD AREA --- */
         section[data-testid="stFileUploaderDropzone"] {
-            border: 2px dashed var(--primary) !important;
-            background-color: rgba(59, 130, 246, 0.05) !important;
-            border-radius: 20px !important;
-            padding: 30px !important;
-            transition: all 0.3s ease;
-        }
-
-        section[data-testid="stFileUploaderDropzone"]:hover {
-            background-color: rgba(59, 130, 246, 0.1) !important;
-            border-color: var(--primary-dark) !important;
-            transform: scale(1.01);
-        }
-        
-        /* Make the instruction text larger */
-        section[data-testid="stFileUploaderDropzone"] div {
-            font-size: 1.1rem !important;
-            color: var(--primary-dark) !important;
-            font-weight: 600 !important;
-        }
-
-        /* --- MOBILE --- */
-        @media (max-width: 768px) {
-            h1 { font-size: 2rem !important; text-align: left; }
-            .stTabs [data-baseweb="tab-list"] { width: 100%; border-radius: 16px; overflow-x: auto; }
-            [data-testid="stMetric"] { margin-bottom: 1rem; }
+            border: 1px dashed var(--border) !important;
+            background-color: #F8FAFC !important;
+            border-radius: var(--radius) !important;
         }
     </style>
     """, unsafe_allow_html=True)
@@ -1077,52 +1047,49 @@ def display_benno_chat():
         /* Force the Popover container to float bottom-right */
         div[data-testid="stPopover"] {
             position: fixed !important;
-            bottom: 100px !important; /* Higher position */
-            right: 30px !important;
-            width: auto !important;
-            height: auto !important;
+            bottom: 40px !important; /* Cleaner position */
+            right: 40px !important;
             z-index: 999999 !important;
             background: transparent !important;
             border: none !important;
         }
 
-        /* Style the Button inside to be a blue circle */
+        /* Technical/SpaceX Floating Button */
         div[data-testid="stPopover"] button {
-            width: 70px !important; /* Bigger */
-            height: 70px !important;
+            width: 64px !important;
+            height: 64px !important;
             border-radius: 50% !important;
-            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important; /* Theme Blue Gradient */
+            background: #0072F5 !important; /* Electric Blue */
             color: white !important;
-            border: 2px solid white !important; /* Bold look */
-            box-shadow: 0 8px 25px rgba(0,0,0,0.3) !important;
+            border: none !important;
+            box-shadow: 0 4px 12px rgba(0, 114, 245, 0.4) !important;
             display: flex !important;
             align-items: center !important;
             justify-content: center !important;
             padding: 0 !important;
             margin: 0 !important;
+            transition: all 0.2s ease-out !important;
         }
 
         /* Hover effect */
         div[data-testid="stPopover"] button:hover {
-            transform: scale(1.1);
-            background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%) !important; /* Lighter Blue Hover */
-            box-shadow: 0 12px 30px rgba(0,0,0,0.4) !important;
+            transform: scale(1.05);
+            background: #005BC4 !important; /* Darker Blue */
+            box-shadow: 0 8px 24px rgba(0, 114, 245, 0.5) !important;
         }
 
-        /* Icon sizing fix */
+        /* Icon */
+        div[data-testid="stPopover"] button p {
+            font-size: 28px !important;
+            line-height: 1 !important;
+            margin: 0 !important;
+        }
+
+        /* Inner icon centering */
         div[data-testid="stPopover"] button div {
             display: flex;
             align-items: center;
             justify-content: center;
-        }
-
-        /* Ensure no weird text rendering */
-        div[data-testid="stPopover"] button p {
-            font-size: 32px !important; /* Bigger Icon */
-            margin: 0 !important;
-            padding: 0 !important;
-            line-height: 1 !important;
-            font-weight: bold !important;
         }
     </style>
     """, unsafe_allow_html=True)
