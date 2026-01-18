@@ -545,41 +545,22 @@ def generate_pdf(df, project_name, total_price, recipient_address=""):
 # --- UI Functions ---
 def display_sidebar():
     with st.sidebar:
-        # --- PREMIUM AD SPACE (CSS Styled - Safer) ---
-        st.markdown("""
-        <div class="premium-ad-slot">
-            <div class="accent-bar"></div>
+        # --- PREMIUM AD SPACE (Simple & Sarcastic) ---
+        st.info("💎 **PLATZ FÜR VISIONÄRE**")
+        st.markdown("**Für 10.000 € könnte Dein Logo hier stehen.**")
+        st.caption("*(Wir nehmen auch Bitcoin, Sportwagen oder Inseln.)*")
 
-            <div class="icon">💎</div>
+        st.markdown("---")
 
-            <div class="text">
-                DEIN LOGO
-            </div>
+        # --- APP BRANDING ---
+        c1, c2 = st.columns([1, 4])
+        with c1:
+            st.markdown("# 🏗️")
+        with c2:
+            st.markdown("**Angebot Pro**")
+            st.caption("Smart Calc v2.0")
 
-            <div class="ad-badge">
-                Platzierung: 10.000 €
-            </div>
-        </div>
-
-        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px; padding-left: 4px;">
-            <div style="
-                width: 36px; height: 36px;
-                background: linear-gradient(135deg, #0072F5 0%, #005BC4 100%);
-                border-radius: 8px;
-                display: flex; align-items: center; justify-content: center;
-                box-shadow: 0 4px 10px rgba(0, 114, 245, 0.2);
-                border: 1px solid rgba(255,255,255,0.1);
-            ">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
-                </svg>
-            </div>
-            <div>
-                <h1 style="margin: 0; font-size: 1.2rem; color: #0F172A; font-weight: 700; font-family: 'Inter', sans-serif; letter-spacing: -0.02em; border: none; padding: 0;">Angebot Pro</h1>
-                <p style="margin: 2px 0 0 0; font-size: 0.65rem; color: #64748B; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; font-family: 'JetBrains Mono', monospace;">Smart Calc v2.0</p>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+        st.markdown("---")
 
         st.info("KI-gestützte Angebotskalkulation")
         st.markdown("---")
