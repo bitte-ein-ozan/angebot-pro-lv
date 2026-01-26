@@ -1,4 +1,4 @@
-streamlit==1.35.0
+streamlit==1.34.0
 pandas
 pdfplumber
 python-docx
@@ -7,4 +7,3 @@ thefuzz
 python-dotenv
 fpdf2
 openpyxl
-watchdog
