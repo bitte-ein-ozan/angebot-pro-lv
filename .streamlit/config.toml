@@ -1,8 +1,8 @@
-[theme]
-primaryColor = "#2e7d32"
-backgroundColor = "#FFFFFF"
-secondaryBackgroundColor = "#fcfcfc"
-textColor = "#1b1b1b"
-font = "sans serif"
 [server]
-runOnSave = true
+headless = true
+enableCORS = false
+enableXsrfProtection = false
+folderWatchBlacklist = ['data']
+
+[browser]
+gatherUsageStats = false
