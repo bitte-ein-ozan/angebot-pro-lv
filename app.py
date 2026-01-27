@@ -267,6 +267,52 @@ def extract_pricelist_from_text_ai(page_text):
         print(f"AI Import Failed: {e}")
         return []
 
+def clean_and_merge_items(items):
+    """
+    Post-processing to fix split items.
+    If an item has 0 quantity and looks like a continuation (e.g. starts with article number),
+    merge it into the previous item.
+    """
+    if not items:
+        return []
+
+    cleaned = []
+    last_valid = None
+
+    for item in items:
+        # Check for "Ghost Item" (0 Qty, 0 Price)
+        # Note: Sometimes extracted price is missing, so we rely heavily on Quantity 0
+        is_ghost = (item.get('quantity', 0) == 0)
+        
+        # Heuristic: If it has an OZ that looks like a long Article ID (no dots, >4 digits), it's likely a description line
+        oz = str(item.get('oz', ''))
+        if oz and not '.' in oz and len(oz) > 4 and is_ghost:
+            # It's definitely a continuation line interpreted as an item
+            pass
+        elif not is_ghost:
+            # It's a real item
+            cleaned.append(item)
+            last_valid = item
+            continue
+        
+        # If we are here, it is a ghost/continuation item
+        if last_valid:
+            # Append text to previous item
+            # We append the 'oz' too if it looks like part of the text (Article Number)
+            extra_text = ""
+            if oz and len(oz) > 3:
+                extra_text += f"{oz} "
+            extra_text += item.get('description', '')
+            
+            last_valid['description'] += f" {extra_text}"
+        else:
+            # Ghost item at the very start? Keep it or discard.
+            # Usually keep to be safe, or discard if strictly garbage.
+            # Let's keep it but marked as 0 qty (it will be filtered/shown as red later)
+            cleaned.append(item)
+
+    return cleaned
+
 def analyze_with_azure_ai(full_text):
     if not st.session_state.ai_enabled:
         return [], [{'level': 'warning', 'message': "Azure AI ist nicht konfiguriert. Führe Regex-Extraktion durch."}]
@@ -353,7 +399,6 @@ def analyze_with_azure_ai(full_text):
             except json.JSONDecodeError:
                 msg = f"KI hat auf Seite {i+1} kein valides JSON geliefert. Versuche Regex-Fallback für diese Seite."
                 processing_log.append({'level': 'warning', 'message': msg})
-                # Fallback per page could go here
                 
         except APIStatusError as e:
             msg = f"Seite {i+1}: API Fehler {e}"
@@ -365,13 +410,20 @@ def analyze_with_azure_ai(full_text):
         progress_bar.progress(min((i + 1) / len(pages), 1.0), text=f"Seite {i+1} verarbeitet.")
 
     progress_bar.empty()
-    return all_items, processing_log
+    
+    # NEW: Merge split items
+    merged_items = clean_and_merge_items(all_items)
+    
+    return merged_items, processing_log
 
 def extract_lv_items(text):
-    # Regex fallback - IMPROVED
-    # Handles: 01.01.0010, 1.1.1, 1.2., Pos. 1, Position 10
-    oz_pattern = r'^(\d+(?:\.\d+)+\.?|Pos\.?\s*\d+|Position\s*\d+)\s+(.*)'
-    qty_line_pattern = r'^\s*([\d\.,]+)\s*([a-zA-Z²³]+|m2|m3|Stk|psch|lfm|h|t)\s*'
+    # Regex fallback - IMPROVED V2
+    # OZ must have a dot (1.1, 01.001) OR be explicit 'Pos.' to avoid matching Article IDs (e.g. 867130)
+    oz_pattern = r'^(\d+\.\d+(?:\.\d+)*\.?|Pos\.?\s*\d+|Position\s*\d+)\s+(.*)'
+    
+    # Quantity line often looks like: "10,000 m2" or "10 Fla"
+    # Added 'Fla', 'St', 'Pck' to units
+    qty_line_pattern = r'^\s*([\d\.,]+)\s*([a-zA-Z²³]+|m2|m3|Stk|St|Fla|Pck|psch|lfm|h|t)\s*'
 
     if isinstance(text, list):
         text = "\n".join(text)
@@ -386,34 +438,52 @@ def extract_lv_items(text):
 
         # Check for new Item start (OZ)
         match_oz = re.match(oz_pattern, line)
+        
+        # Special check: If it looks like an OZ but is just a big integer (Article ID), ignore it as OZ
+        is_article_id = False
         if match_oz:
+            oz_candidate = match_oz.group(1)
+            if not "." in oz_candidate and not "Pos" in oz_candidate and len(oz_candidate) > 4:
+                is_article_id = True # Likely EAN or Article ID
+        
+        if match_oz and not is_article_id:
             # Save previous item
-            if current_item and (current_item['quantity'] > 0 or len(current_item['description']) > 10):
+            if current_item:
                 items.append(current_item)
             
             current_item = {'oz': match_oz.group(1), 'description': match_oz.group(2), 'quantity': 0.0, 'unit': ''}
             continue
 
         if current_item:
-            # Check for Quantity line (often looks like: "10,000 m2 ...")
+            # Check for Quantity line
             match_qty = re.search(qty_line_pattern, line)
-            if match_qty and "von" not in line and "Datum" not in line:
+            
+            # Heuristic: If we already have a quantity, this line is probably NOT a quantity line 
+            # unless it's a correction. Assume it's description if we already have qty.
+            if match_qty and current_item['quantity'] == 0.0 and "von" not in line and "Datum" not in line:
                 try:
                     q_str = match_qty.group(1).replace('.', '').replace(',', '.')
                     current_item['quantity'] = float(q_str)
                     current_item['unit'] = match_qty.group(2)
-                    # If line has more text, append to description? Usually qty line is just math.
+                    
+                    # Sometimes the price is on the same line "10 Stk 9,90"
+                    # We could extract text after unit
+                    rest_of_line = line[match_qty.end():].strip()
+                    if len(rest_of_line) > 3 and not re.match(r'^[\d,\.]+$', rest_of_line):
+                         # If it's not just a price, append to description
+                         pass 
                 except: pass
             else:
                 # Append text to description
-                if "Datum:" not in line and "Projekt:" not in line and "Seite" not in line:
+                # Filter out noise like "Übertrag" or Page numbers
+                if "Datum:" not in line and "Projekt:" not in line and "Seite" not in line and "Übertrag" not in line:
                     current_item['description'] += " " + line
 
     # Save last item
-    if current_item and (current_item['quantity'] > 0 or len(current_item['description']) > 10):
+    if current_item:
         items.append(current_item)
         
-    return items
+    return clean_and_merge_items(items)
 
 def find_best_match(item_text, price_db):
     if price_db.empty:
