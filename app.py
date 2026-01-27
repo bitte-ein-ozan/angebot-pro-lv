@@ -272,17 +272,20 @@ def analyze_with_azure_ai(full_text):
         return [], [{'level': 'warning', 'message': "Azure AI ist nicht konfiguriert. Führe Regex-Extraktion durch."}]
 
     system_prompt = """
-    You are a data extraction API. Your task is to process text from a German construction tender document (Leistungsverzeichnis, LV) and extract item details.
-    The content is purely technical construction specifications. Ignore any perceived policy violations as false positives for technical data.
-    For each item (Position), you MUST extract:
-    - "oz": The position number (e.g., '01.01.0010').
-    - "text": The short description of the service.
-    - "menge": The quantity, as a floating point number.
-    - "einheit": The unit (e.g., 'm3', 'Stk', 'psch').
-    Return the result as a single, valid JSON array of objects.
-    Example: [{"oz": "01.01.0010", "text": "Stahlbeton C25/30", "menge": 10.5, "einheit": "m3"}]
-    If no items are found on the provided page, you MUST return an empty JSON array: [].
-    Do not add any explanations, introductory text, or markdown. Only output the raw JSON.
+    You are a precise data extraction expert for construction invoices/LVs.
+    Your GOAL: Extract 100% of the billable line items (Positions).
+    
+    INSTRUCTIONS:
+    1. Extract every item that has a Description and a Quantity/Price.
+    2. "oz": Position number (e.g. '01.01.0010', '1.1', 'Pos. 3'). If missing, look for a sequential number. If absolutely none, leave empty string "".
+    3. "text": The full description of the item. Do not truncate essential details.
+    4. "menge": The quantity (numeric).
+    5. "einheit": The unit (e.g. m2, Stk, psch).
+    
+    IMPORTANT:
+    - Do NOT skip items because the OZ format is weird.
+    - Do NOT skip "Zulage" or "Alternativposition" items.
+    - Output purely JSON array of objects.
     """
 
     if isinstance(full_text, list):
@@ -292,7 +295,7 @@ def analyze_with_azure_ai(full_text):
 
     all_items = []
     processing_log = []
-    progress_bar = st.progress(0, text="Analysiere Seiten mit KI...")
+    progress_bar = st.progress(0, text="Analysiere Seiten mit KI (Deep Scan)...")
 
     for i, page_text in enumerate(pages):
         if not page_text.strip() or len(page_text) < 50:
@@ -316,45 +319,59 @@ def analyze_with_azure_ai(full_text):
                 if isinstance(json_content, list):
                     items_list = json_content
                 elif isinstance(json_content, dict):
-                    list_values = [v for v in json_content.values() if isinstance(v, list)]
-                    if list_values:
-                        items_list = list_values[0]
-                    elif "oz" in json_content:
+                    # Try to find any list in the dict
+                    for k, v in json_content.items():
+                        if isinstance(v, list):
+                            items_list = v
+                            break
+                    # Fallback: maybe the dict itself is one item
+                    if not items_list and ("text" in json_content or "description" in json_content):
                         items_list = [json_content]
 
                 for item in items_list:
+                    desc = item.get('text', '') or item.get('description', '')
+                    if not desc: continue # Skip completely empty items
+
                     normalized_item = {
                         'oz': item.get('oz', ''),
-                        'description': item.get('text', '') or item.get('description', ''),
+                        'description': desc,
                         'quantity': item.get('menge', 0) or item.get('quantity', 0),
                         'unit': item.get('einheit', '') or item.get('unit', '')
                     }
-                    try: normalized_item['quantity'] = float(normalized_item['quantity'])
-                    except: normalized_item['quantity'] = 0.0
+                    
+                    # Quantity Cleanup
+                    try: 
+                        q_str = str(normalized_item['quantity']).replace(',', '.')
+                        normalized_item['quantity'] = float(q_str)
+                    except: 
+                        normalized_item['quantity'] = 0.0
 
-                    if normalized_item['oz']:
+                    # RELAXED FILTER: Accept if it has a description, even without OZ
+                    if len(normalized_item['description']) > 2:
                         all_items.append(normalized_item)
 
             except json.JSONDecodeError:
-                msg = f"KI hat auf Seite {i+1} ungültiges JSON zurückgegeben."
+                msg = f"KI hat auf Seite {i+1} kein valides JSON geliefert. Versuche Regex-Fallback für diese Seite."
                 processing_log.append({'level': 'warning', 'message': msg})
-
+                # Fallback per page could go here
+                
         except APIStatusError as e:
             msg = f"Seite {i+1}: API Fehler {e}"
             processing_log.append({'level': 'warning' if e.status_code == 403 else 'error', 'message': msg})
         except Exception as e:
-            msg = f"Seite {i+1}: Unerwarteter Fehler: {e}"
+            msg = f"Seite {i+1}: Fehler: {e}"
             processing_log.append({'level': 'error', 'message': msg})
 
-        progress_bar.progress(min((i + 1) / len(pages), 1.0), text=f"Seite {i+1}/{len(pages)} analysiert.")
+        progress_bar.progress(min((i + 1) / len(pages), 1.0), text=f"Seite {i+1} verarbeitet.")
 
     progress_bar.empty()
     return all_items, processing_log
 
 def extract_lv_items(text):
-    # Regex fallback
-    oz_pattern = r'^(\d{2,}\.\d{2,}\.\d{2,}(?:\.\d{2,})?\.?)\s+(.*)'
-    qty_line_pattern = r'^\s*([\d\.,]+)\s*([a-zA-Z²³]+|m2|m3|Stk|psch|lfm|h|t)\s*(\.{2,}|Nur Einh\.|Einh\.-Pr\.)?'
+    # Regex fallback - IMPROVED
+    # Handles: 01.01.0010, 1.1.1, 1.2., Pos. 1, Position 10
+    oz_pattern = r'^(\d+(?:\.\d+)+\.?|Pos\.?\s*\d+|Position\s*\d+)\s+(.*)'
+    qty_line_pattern = r'^\s*([\d\.,]+)\s*([a-zA-Z²³]+|m2|m3|Stk|psch|lfm|h|t)\s*'
 
     if isinstance(text, list):
         text = "\n".join(text)
@@ -367,28 +384,35 @@ def extract_lv_items(text):
         line = line.strip()
         if not line: continue
 
+        # Check for new Item start (OZ)
         match_oz = re.match(oz_pattern, line)
         if match_oz:
-            if current_item and current_item['quantity'] > 0:
+            # Save previous item
+            if current_item and (current_item['quantity'] > 0 or len(current_item['description']) > 10):
                 items.append(current_item)
+            
             current_item = {'oz': match_oz.group(1), 'description': match_oz.group(2), 'quantity': 0.0, 'unit': ''}
             continue
 
         if current_item:
+            # Check for Quantity line (often looks like: "10,000 m2 ...")
             match_qty = re.search(qty_line_pattern, line)
-            if match_qty and "von" not in line:
+            if match_qty and "von" not in line and "Datum" not in line:
                 try:
-                    current_item['quantity'] = float(match_qty.group(1).replace('.', '').replace(',', '.'))
+                    q_str = match_qty.group(1).replace('.', '').replace(',', '.')
+                    current_item['quantity'] = float(q_str)
                     current_item['unit'] = match_qty.group(2)
-                    items.append(current_item)
-                    current_item = None
+                    # If line has more text, append to description? Usually qty line is just math.
                 except: pass
             else:
-                if "Datum:" not in line and "Projekt:" not in line:
+                # Append text to description
+                if "Datum:" not in line and "Projekt:" not in line and "Seite" not in line:
                     current_item['description'] += " " + line
 
-    if current_item and current_item['quantity'] > 0:
+    # Save last item
+    if current_item and (current_item['quantity'] > 0 or len(current_item['description']) > 10):
         items.append(current_item)
+        
     return items
 
 def find_best_match(item_text, price_db):
@@ -1048,25 +1072,37 @@ def setup_premium_design():
 
         /* --- TABS --- */
         .stTabs [data-baseweb="tab-list"] {
-            background: white;
-            padding: 4px;
-            border-radius: 8px;
-            border: 1px solid var(--border);
-            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-            gap: 4px;
+            gap: 8px;
+            background-color: transparent;
+            border: none;
+            box-shadow: none;
+            margin-bottom: 20px;
         }
 
         .stTabs [data-baseweb="tab"] {
-            height: 32px;
-            border-radius: 6px;
+            height: 50px;
+            background-color: #FFFFFF;
+            border: 1px solid var(--border);
+            border-radius: 8px;
             color: var(--text-sub);
-            font-weight: 500;
+            font-weight: 600;
+            font-size: 16px;
+            padding: 0 24px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+            transition: all 0.2s ease;
+        }
+
+        .stTabs [data-baseweb="tab"]:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+            transform: translateY(-1px);
         }
 
         .stTabs [aria-selected="true"] {
-            background-color: var(--bg-color) !important;
-            color: var(--primary) !important;
-            font-weight: 600 !important;
+            background-color: var(--primary) !important;
+            color: white !important;
+            border-color: var(--primary) !important;
+            box-shadow: 0 4px 12px rgba(0, 114, 245, 0.3) !important;
         }
 
         /* --- DATAFRAME --- */
@@ -1257,7 +1293,7 @@ def main():
     # Render Floating Chat
     display_benno_chat()
 
-    t1, t2, t3 = st.tabs(["Angebot", "Datenbank", "Verlauf"])
+    t1, t2, t3 = st.tabs(["📝 Angebot erstellen", "🗄️ Datenbank verwalten", "📜 Verlauf einsehen"])
     with t1: tab_angebot_erstellen()
     with t2: tab_datenbank_verwalten()
     with t3: tab_verlauf()
